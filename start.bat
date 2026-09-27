@@ -35,4 +35,4 @@ echo       GOFIT STARTED SUCCESSFULLY
 echo ====================================
 echo.
 
-pause   
+pause       

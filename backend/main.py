@@ -18,7 +18,7 @@ from fastapi import (
     File,
 )
 
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import-not-found]
 
 from pydantic import BaseModel, Field
 
@@ -128,28 +128,39 @@ app = FastAPI(
 # =========================================================
 # CORS
 # =========================================================
+from fastapi.middleware.cors import CORSMiddleware
 
-cors_origins = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:5173"
-).split(",")
+cors_origins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://gofit-sepia.vercel.app'
+]
 
+# If your frontend is deployed on Vercel, add its exact URL here.
+# Example:
+# "https://gofit-sepia.vercel.app"
+
+env_origins = os.getenv("CORS_ORIGINS", "")
+
+if env_origins:
+    cors_origins.extend(
+        origin.strip().rstrip("/")
+        for origin in env_origins.split(",")
+        if origin.strip()
+    )
+
+# Remove duplicates
+cors_origins = list(dict.fromkeys(cors_origins))
+
+print("CORS allowed origins:", cors_origins)
 
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        origin.strip()
-        for origin in cors_origins
-    ],
-
+    allow_origins=cors_origins,
     allow_credentials=True,
-
     allow_methods=["*"],
-
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
-
 
 # =========================================================
 # REALTIME CONNECTIONS
@@ -179,6 +190,7 @@ VALID_STATUSES = {
 # =========================================================
 # MODELS
 # =========================================================
+
 
 class LoginRequest(BaseModel):
 
@@ -251,7 +263,10 @@ class VerifyOTPRequest(BaseModel):
 # =========================================================
 # JWT
 # =========================================================
-
+def hash_password(password: str) -> str:
+    return hashlib.sha256(
+        password.encode("utf-8")
+    ).hexdigest()
 def create_admin_token():
 
     if not JWT_SECRET:
@@ -352,11 +367,15 @@ def get_customer_profile(phone: str):
         .table("customer_profiles")
         .select("*")
         .eq("phone", phone)
-        .maybe_single()
+        .limit(1)
         .execute()
     )
 
-    return result.data
+    rows = result.data or []
+
+    return rows[0] if rows else None
+
+
 # =========================================================
 # REALTIME BROADCAST
 # =========================================================
@@ -463,14 +482,16 @@ def health():
                 and ADMIN_PASSWORD
             )
     }
-
-
 # =========================================================
-# LOGIN
+# LOGIN / CREATE CUSTOMER ACCOUNT
 # =========================================================
 
 @app.post("/api/auth/login")
 def login(request: LoginRequest):
+
+    # -----------------------------------------
+    # CLEAN PHONE NUMBER
+    # -----------------------------------------
 
     clean_phone = "".join(
         character
@@ -478,15 +499,35 @@ def login(request: LoginRequest):
         if character.isdigit()
     )
 
-    # -----------------------------------------------------
+    # -----------------------------------------
+    # VALIDATION
+    # -----------------------------------------
+
+    if len(clean_phone) != 10:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Enter a valid 10-digit phone number"
+        )
+
+    password = request.password.strip()
+
+    if not password:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Password is required"
+        )
+
+    # -----------------------------------------
     # ADMIN LOGIN
-    # -----------------------------------------------------
+    # -----------------------------------------
 
     if (
         ADMIN_PHONE
         and ADMIN_PASSWORD
         and clean_phone == ADMIN_PHONE
-        and request.password == ADMIN_PASSWORD
+        and password == ADMIN_PASSWORD
     ):
 
         token = create_admin_token()
@@ -494,6 +535,8 @@ def login(request: LoginRequest):
         return {
 
             "success": True,
+
+            "created": False,
 
             "user": {
 
@@ -504,156 +547,237 @@ def login(request: LoginRequest):
                 "role": "admin"
             },
 
-            "token": token
+            "token": token,
+
+            "message":
+                "Admin login successful"
         }
 
-    # -----------------------------------------------------
-    # CUSTOMER LOGIN
-    # -----------------------------------------------------
-
-    if len(clean_phone) != 10:
-
-        raise HTTPException(
-            status_code=400,
-            detail="Enter a valid 10-digit phone number"
-        )
-
-    return {
-
-        "success": True,
-
-        "user": {
-
-            "name": "GoFit Customer",
-
-            "phone": clean_phone,
-
-            "role": "customer"
-        }
-    }
-
-
-# =========================================================
-# CREATE ORDER
-# =========================================================
-
-@app.post("/api/orders")
-async def create_order(order: Order):
+    # -----------------------------------------
+    # SUPABASE CHECK
+    # -----------------------------------------
 
     if not supabase:
 
         raise HTTPException(
             status_code=500,
-            detail="Supabase is not configured"
+            detail=(
+                "Supabase is not configured. "
+                "Check SUPABASE_URL and "
+                "SUPABASE_SECRET_KEY."
+            )
         )
 
-    order_id = str(
-        uuid.uuid4()
-    )
-
-    now = datetime.now(
-        timezone.utc
-    ).isoformat()
-
-    order_data = {
-
-        "id": order_id,
-
-        "customer_name":
-            order.customer_name,
-
-        "phone":
-            order.phone,
-
-        "pickup_location":
-            order.pickup_location,
-
-        "pickup_slot":
-            order.pickup_slot,
-
-        "quantity":
-            order.quantity,
-
-        "product_name":
-            order.product_name,
-
-        "unit_price":
-            order.unit_price,
-
-        "addons":
-            order.addons,
-
-        "addon_total":
-            order.addon_total,
-
-        "packaging_fee":
-            order.packaging_fee,
-
-        "delivery_fee":
-            order.delivery_fee,
-
-        "total_amount":
-            order.total_amount,
-
-        "payment_method":
-            order.payment_method,
-
-        "payment_status":
-            order.payment_status,
-
-        "product_id":
-            "gofit-regular",
-
-        "status":
-            "received",
-
-        "created_at":
-            now,
-
-        "updated_at":
-            now
-    }
+    # -----------------------------------------
+    # FIND CUSTOMER
+    # -----------------------------------------
 
     try:
 
         result = (
             supabase
-            .table("orders")
-            .insert(order_data)
+            .table("customer_accounts")
+            .select("phone, password_hash")
+            .eq("phone", clean_phone)
+            .limit(1)
             .execute()
         )
 
-        if not result.data:
+        rows = result.data or []
 
-            raise HTTPException(
-                status_code=500,
-                detail="Order was not created"
-            )
-
-        new_order = result.data[0]
-
-        # Notify admin dashboard
-        await broadcast_admin({
-
-            "type":
-                "new_order",
-
-            "order":
-                new_order
-        })
-
-        return new_order
-
-    except HTTPException:
-
-        raise
+        customer = (
+            rows[0]
+            if rows
+            else None
+        )
 
     except Exception as e:
 
+        print(
+            "CUSTOMER LOOKUP ERROR:",
+            e
+        )
+
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="Unable to check customer account"
         )
+
+    # -----------------------------------------
+    # NEW CUSTOMER
+    # -----------------------------------------
+
+    if not customer:
+
+        password_hash = hash_password(
+            password
+        )
+
+        new_customer = {
+
+            "phone":
+                clean_phone,
+
+            "password_hash":
+                password_hash
+        }
+
+        try:
+
+            result = (
+                supabase
+                .table("customer_accounts")
+                .insert(new_customer)
+                .execute()
+            )
+
+            if not result.data:
+
+                raise HTTPException(
+                    status_code=500,
+                    detail="Unable to create customer account"
+                )
+
+        except HTTPException:
+
+            raise
+
+        except Exception as e:
+
+            print(
+                "ACCOUNT CREATION ERROR:",
+                e
+            )
+
+            raise HTTPException(
+                status_code=500,
+                detail="Unable to create customer account"
+            )
+
+        # -----------------------------------------
+        # CREATE CUSTOMER PROFILE
+        # -----------------------------------------
+
+        try:
+
+            (
+                supabase
+                .table("customer_profiles")
+                .upsert(
+                    {
+                        "phone":
+                            clean_phone,
+
+                        "name":
+                            "GoFit Customer",
+
+                        "email":
+                            "",
+
+                        "email_verified":
+                            False,
+
+                        "bio":
+                            ""
+                    },
+                    on_conflict="phone"
+                )
+                .execute()
+            )
+
+        except Exception as e:
+
+            print(
+                "PROFILE CREATION WARNING:",
+                e
+            )
+
+        return {
+
+            "success":
+                True,
+
+            "created":
+                True,
+
+            "user": {
+
+                "name":
+                    "GoFit Customer",
+
+                "phone":
+                    clean_phone,
+
+                "role":
+                    "customer"
+            },
+
+            "message":
+                "GoFit account created successfully"
+        }
+
+    # -----------------------------------------
+    # EXISTING CUSTOMER
+    # -----------------------------------------
+
+    password_hash = hash_password(
+        password
+    )
+
+    stored_password_hash = (
+        customer.get(
+            "password_hash"
+        )
+    )
+
+    if not stored_password_hash:
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Customer account is missing "
+                "password information"
+            )
+        )
+
+    # -----------------------------------------
+    # WRONG PASSWORD
+    # -----------------------------------------
+
+    if password_hash != stored_password_hash:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Wrong password. Please try again."
+        )
+
+    # -----------------------------------------
+    # SUCCESSFUL CUSTOMER LOGIN
+    # -----------------------------------------
+
+    return {
+
+        "success":
+            True,
+
+        "created":
+            False,
+
+        "user": {
+
+            "name":
+                "GoFit Customer",
+
+            "phone":
+                clean_phone,
+
+            "role":
+                "customer"
+        },
+
+        "message":
+            "Login successful"
+    }
 
 # =========================================================
 # CUSTOMER PROFILE
@@ -1336,7 +1460,70 @@ def get_order(
             detail="Order not found"
         )
 
+# =========================================================
+# CUSTOMER ORDER STATISTICS
+# =========================================================
 
+@app.get("/api/customer/{phone}/stats")
+def get_customer_order_stats(phone: str):
+
+    clean_phone = clean_phone_number(phone)
+
+    if len(clean_phone) != 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid phone number"
+        )
+
+    if not supabase:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured"
+        )
+
+    try:
+
+        result = (
+            supabase
+            .table("orders")
+            .select("quantity, status")
+            .eq("phone", clean_phone)
+            .execute()
+        )
+
+        orders = result.data or []
+
+        total_orders = len(orders)
+
+        boxes_taken = sum(
+            int(order.get("quantity") or 0)
+            for order in orders
+            if str(
+                order.get("status", "")
+            ).lower() == "completed"
+        )
+
+        cancelled_orders = sum(
+            1
+            for order in orders
+            if str(
+                order.get("status", "")
+            ).lower() == "cancelled"
+        )
+
+        return {
+            "success": True,
+            "boxes_taken": boxes_taken,
+            "cancelled": cancelled_orders,
+            "orders": total_orders
+        }
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 # =========================================================
 # UPDATE ORDER STATUS
 # =========================================================

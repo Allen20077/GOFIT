@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-const ADMIN_PHONE = import.meta.env.VITE_ADMIN_PHONE;
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 import "./index.css";
 
 const PRODUCT = {
@@ -210,9 +208,16 @@ const [previousOrderCount, setPreviousOrderCount] = useState(0);
 const [selectedPlan, setSelectedPlan] = useState(null);
 const [quantity, setQuantity] = useState(1);
 const [selectedAddons, setSelectedAddons] = useState([]);
-const [loyaltyBoxes, setLoyaltyBoxes] = useState(
+  const [loyaltyBoxes, setLoyaltyBoxes] = useState(
   Number(localStorage.getItem("gofit_loyalty_boxes") || 0)
-);
+  );
+  const [customerStats, setCustomerStats] = useState({
+  boxes_taken: 0,
+  cancelled: 0,
+  orders: 0,
+});
+
+const [customerStatsLoading, setCustomerStatsLoading] = useState(false);
 const [showLoyalty, setShowLoyalty] = useState(false);
 
 const [name, setName] = useState("");
@@ -280,30 +285,25 @@ function saveLocation() {
 // ================================
 // LOGIN
 // ================================
-
 async function loginUser() {
   const cleanPhone = loginPhone.replace(/\D/g, "");
 
   if (cleanPhone.length !== 10) {
-    alert("Please enter a valid 10-digit phone number.");
+    showMessage("Enter a valid 10-digit phone number");
     return;
   }
 
   if (!loginPassword.trim()) {
-    alert("Please enter your password.");
+    showMessage("Enter your password");
     return;
   }
 
   try {
-    setMessage("Logging in...");
+    showMessage("Logging in...");
 
-    // Use VITE_API_URL if available.
-    // Otherwise automatically use the local FastAPI server.
     const API_URL =
-      import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-    console.log("LOGIN API:", `${API_URL}/api/auth/login`);
-    console.log("LOGIN PHONE:", cleanPhone);
+      import.meta.env.VITE_API_URL ||
+      "http://localhost:8000";
 
     const response = await fetch(
       `${API_URL}/api/auth/login`,
@@ -319,11 +319,7 @@ async function loginUser() {
       }
     );
 
-    console.log("LOGIN STATUS:", response.status);
-
     const data = await response.json();
-
-    console.log("LOGIN RESPONSE:", data);
 
     if (!response.ok) {
       throw new Error(
@@ -331,26 +327,24 @@ async function loginUser() {
       );
     }
 
-    // Save logged-in user
-    if (data.user) {
-      localStorage.setItem(
-        "gofit_user",
-        JSON.stringify(data.user)
+    // IMPORTANT
+    const loggedUser = data.user;
+
+    if (!loggedUser) {
+      throw new Error(
+        "Server did not return a user"
       );
-
-      setUser(data.user);
     }
-    if (
-  loggedUser.role === "customer"
-) {
 
-  loadCustomerProfile(
-    loggedUser.phone
-  );
+    // Save user
+    localStorage.setItem(
+      "gofit_user",
+      JSON.stringify(loggedUser)
+    );
 
-}
+    setUser(loggedUser);
 
-    // Save admin token
+    // Save admin token if this is admin
     if (data.token) {
       localStorage.setItem(
         "gofit_admin_token",
@@ -358,40 +352,112 @@ async function loginUser() {
       );
     }
 
+    // =================================
     // ADMIN
-    if (data.user?.role === "admin") {
-      setMessage("Admin login successful!");
+    // =================================
 
-      setTimeout(() => {
-        setPage("admin");
-      }, 100);
+    if (loggedUser.role === "admin") {
+      setLoginPhone("");
+      setLoginPassword("");
+
+      setPage("admin");
+
+      showMessage(
+        "Admin login successful ✓"
+      );
 
       return;
     }
 
+    // =================================
     // CUSTOMER
-    setMessage("Login successful!");
+    // =================================
 
-    setTimeout(() => {
+    if (loggedUser.role === "customer") {
+      setLoginPhone("");
+      setLoginPassword("");
+
+      // Open profile immediately
       setPage("profile");
-    }, 100);
 
+      // Load saved profile in background
+      loadCustomerProfile(loggedUser.phone);
+
+      showMessage(
+  data.created
+    ? "GoFit account created ✓"
+    : "Login successful ✓"
+);
+
+      return;
+    }
+
+    throw new Error(
+      "Unknown account type"
+    );
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
-
-    setMessage(
-      `Login failed: ${error.message}`
+    console.error(
+      "LOGIN ERROR:",
+      error
     );
 
-    alert(
-      `Login failed:\n\n${error.message}`
+    showMessage(
+      error.message ||
+      "Unable to connect to GoFit server"
     );
   }
 }
 // ========================================
 // SAVE CUSTOMER PROFILE
 // ========================================
+async function loadCustomerStats() {
 
+  if (!user?.phone) {
+    return;
+  }
+
+  try {
+
+    setCustomerStatsLoading(true);
+
+    const response = await fetch(
+      `${API_BASE}/api/customer/${user.phone}/stats`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail ||
+        "Unable to load customer statistics"
+      );
+    }
+
+    setCustomerStats({
+      boxes_taken:
+        Number(data.boxes_taken || 0),
+
+      cancelled:
+        Number(data.cancelled || 0),
+
+      orders:
+        Number(data.orders || 0),
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Customer statistics error:",
+      error
+    );
+
+  } finally {
+
+    setCustomerStatsLoading(false);
+
+  }
+}
+  
 async function saveCustomerProfile() {
 
   if (!user?.phone) {
@@ -430,8 +496,7 @@ async function saveCustomerProfile() {
     setProfileSaving(true);
 
     const API_URL =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8000";
+      import.meta.env.VITE_API_URL;
 
     const response = await fetch(
       `${API_URL}/api/profile/${user.phone}`,
@@ -548,8 +613,7 @@ async function sendProfileOTP() {
     setOtpLoading(true);
 
     const API_URL =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8000";
+      import.meta.env.VITE_API_URL;
 
     const response = await fetch(
       `${API_URL}/api/profile/${user.phone}/send-otp`,
@@ -630,8 +694,7 @@ async function verifyProfileOTP() {
     setOtpLoading(true);
 
     const API_URL =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8000";
+      import.meta.env.VITE_API_URL ;
 
     const response = await fetch(
       `${API_URL}/api/profile/${user.phone}/verify-otp`,
@@ -755,8 +818,7 @@ async function uploadProfilePhoto(
     );
 
     const API_URL =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8000";
+      import.meta.env.VITE_API_URL ;
 
     const response = await fetch(
       `${API_URL}/api/profile/${user.phone}/photo`,
@@ -845,8 +907,7 @@ async function loadCustomerProfile(
     setProfileLoading(true);
 
     const API_URL =
-      import.meta.env.VITE_API_URL ||
-      "http://localhost:8000";
+      import.meta.env.VITE_API_URL ;
 
     const response = await fetch(
       `${API_URL}/api/profile/${phoneNumber}`
@@ -1217,17 +1278,24 @@ function addLoyaltyBoxes(quantityBought) {
     return updated;
   });
 }
+  
 async function placeCODOrder() {
-    setPaymentProcessing(true);
+  setPaymentProcessing(true);
 
-    try {
-        const response = await fetch(
-            "http://localhost:8000/api/orders",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+  try {
+    const API_URL = import.meta.env.VITE_API_URL;
+
+    if (!API_URL) {
+      throw new Error("VITE_API_URL is not configured");
+    }
+
+    const response = await fetch(
+      `${API_URL}/api/orders`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
                 body: JSON.stringify({
                     customer_name: name,
                     phone: phone,
@@ -1293,62 +1361,6 @@ async function placeCODOrder() {
 
 const freeBoxUnlocked =
   loyaltyBoxes >= 10;
-  async function placeOrder() {
-    if (!name.trim()) {
-      showMessage("Please enter your name");
-      return;
-    }
-if (!location.trim()) {
-  showMessage("Please select a delivery location");
-  return;
-}
-    if (!phone.trim() || phone.length < 10) {
-      showMessage("Enter a valid phone number");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:8000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customer_name: name,
-          phone,
-          pickup_location: location,
-          pickup_slot: slot,
-          quantity,
-          product_name: PRODUCT.name,
-          unit_price: PRODUCT.price,
-          addons: selectedAddons.map((addon) => ({
-            name: ADDONS[addon].name,
-            price: ADDONS[addon].price,
-          })),
-          addon_total: addonTotal,
-          packaging_fee: packaging,
-          delivery_fee: 0,
-          total_amount: total,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Order failed");
-      }
-
-setOrder(data);
-
-addLoyaltyBoxes(quantity);
-
-setPage("track");
-
-showMessage("Order sent to GoFit kitchen ✓");
-    } catch (error) {
-      showMessage(error.message);
-    }
-  }
 
 useEffect(() => {
   if (user?.role !== "admin") {
@@ -1357,9 +1369,18 @@ useEffect(() => {
 
   loadAdminOrders();
 
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl =
+    import.meta.env.VITE_API_URL ||
+    "http://localhost:8000";
 
-  const api = new URL(apiUrl);
+  let api;
+
+  try {
+    api = new URL(apiUrl);
+  } catch (error) {
+    console.error("Invalid API URL:", apiUrl);
+    return;
+  }
 
   const protocol =
     api.protocol === "https:"
@@ -1371,9 +1392,7 @@ useEffect(() => {
   );
 
   socket.onopen = () => {
-    console.log(
-      "GoFit admin realtime connected"
-    );
+    console.log("GoFit admin realtime connected");
 
     const token = localStorage.getItem(
       "gofit_admin_token"
@@ -1381,21 +1400,14 @@ useEffect(() => {
 
     socket.send(
       JSON.stringify({
-        token: token,
+        token,
       })
     );
   };
 
   socket.onmessage = (event) => {
     try {
-      const data = JSON.parse(
-        event.data
-      );
-
-      console.log(
-        "Admin realtime:",
-        data
-      );
+      const data = JSON.parse(event.data);
 
       if (data.type === "new_order") {
         setAdminOrders((current) => [
@@ -1455,9 +1467,9 @@ useEffect(() => {
 
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8000/api/orders/${order.id}`
-        );
+const response = await fetch(
+  `${import.meta.env.VITE_API_URL}/api/orders/${order.id}`
+);
 
         if (response.ok) {
           const data = await response.json();
@@ -1501,73 +1513,41 @@ useEffect(() => {
 
   </div>
 
-  <button
-    type="button"
-    className="loyalty-mini"
-    onClick={() => setShowLoyalty(true)}
-  >
+<button
+  type="button"
+  className="loyalty-mini"
+  onClick={() => setShowLoyalty(true)}
+>
+  <span className="loyalty-icon">
+    🎁
+  </span>
 
-  <div className="loyalty-mini-top">
+  <span className="loyalty-content">
+    <strong>
+      {freeBoxUnlocked ? "FREE BOX!" : `${loyaltyBoxes}/10 BOXES`}
+    </strong>
 
-    <span>🎁</span>
-
-    <div>
-      <strong>
-        {freeBoxUnlocked
-          ? "FREE BOX!"
-          : `${loyaltyBoxes}/10 BOXES`}
-      </strong>
-
-      <small>
-        {freeBoxUnlocked
-          ? "Reward unlocked 🎉"
-          : `${10 - loyaltyBoxes} more for free`}
-      </small>
-    </div>
-
-  </div>
+    <small>
+      {freeBoxUnlocked
+        ? "Reward unlocked 🎉"
+        : `${Math.max(0, 10 - loyaltyBoxes)} more for free`}
+    </small>
+  </span>
 
   <div className="loyalty-progress">
-
     <div
       className="loyalty-progress-fill"
       style={{
         width: `${loyaltyProgress}%`
       }}
     />
-
   </div>
-
 </button>
-<button
-  type="button"
-  className="profile-button"
-  onClick={() => setPage("profile")}
-  aria-label={
-    user?.role === "admin"
-      ? "Admin profile"
-      : "User profile"
-  }
->
-  {user?.profile_photo_url ? (
-    <img
-      src={user.profile_photo_url}
-      alt="Profile"
-      className="header-profile-image"
-    />
-  ) : user?.role === "admin" ? (
-    "🛡️"
-  ) : (
-    "👤"
-  )}
-</button>
-        </header>
-        {/* MAIN */}
 
+</header>
+{/* MAIN */}
         <main className="content">
-
-
-          {/* ==========================================
+{/* ==========================================
     PROFILE
 ========================================== */}
 
@@ -1616,12 +1596,20 @@ useEffect(() => {
           autoComplete="current-password"
         />
 
-        <button
-          type="submit"
-          className="profile-login-button"
-        >
-          Login →
-        </button>
+<button
+  type="button"
+  className="profile-login-button"
+  onClick={loginUser}
+>
+  Login / Create Account →
+</button>
+
+<div className="account-info-text">
+  <span>New to GoFit?</span>
+  <strong>
+    Enter your phone number and create an account instantly.
+  </strong>
+</div>
       </form>
     ) : user.role === "admin" ? (
       <section className="admin-profile">
@@ -1631,7 +1619,7 @@ useEffect(() => {
           </div>
 
           <div>
-            <small>
+            <small> 
               ADMIN ACCOUNT
             </small>
 
@@ -1647,33 +1635,32 @@ useEffect(() => {
 
         <div className="admin-access-badge">
           🔐 Full Admin Access
-        </div>
+                    </div>
+                    
+<button                  
+  type="button"
+  className="admin-dashboard-button"
+  onClick={() => {
+    setPage("admin");
+  }}
+>
+  📊 Open Admin Dashboard
+</button>
 
-        <button
-          type="button"
-          className="admin-dashboard-button"
-          onClick={() => {
-            setPage("admin");
-          }}
-        >
-          📊 Open Admin Dashboard
-        </button>
-
-        <button
-          type="button"
-          className="admin-notification-button"
-          onClick={enableAdminNotifications}
-        >
-          🔔 Enable Order Notifications
-        </button>
-
-        <button
-          type="button"
-          className="logout-button"
-          onClick={logoutUser}
-        >
-          Logout
-        </button>
+<button
+  type="button"
+  className="admin-business-button"
+  onClick={() => {
+    setPage("business-profile");
+  }}
+>
+  🏢 GoFit Business Profile
+  <small>
+    History • Finance • Growth
+  </small>
+                    </button>
+                    
+                    
       </section>
     ) : (
       <section className="customer-profile">
@@ -1919,7 +1906,57 @@ useEffect(() => {
 
   )}
 
+{showOtpBox && (
+  <div className="otp-card">
 
+    <div className="otp-card-header">
+      <span>🔐</span>
+
+      <div>
+        <strong>Verify your email</strong>
+
+        <small>
+          Enter the 6-digit OTP sent to {profileEmail}
+        </small>
+      </div>
+    </div>
+
+    <input
+      className="otp-input"
+      type="text"
+      inputMode="numeric"
+      maxLength={6}
+      value={otp}
+      onChange={(e) =>
+        setOtp(
+          e.target.value
+            .replace(/\D/g, "")
+            .slice(0, 6)
+        )
+      }
+      placeholder="000000"
+    />
+
+    <button
+      type="button"
+      className="verify-otp-button"
+      onClick={verifyProfileOTP}
+      disabled={otpLoading || otp.length !== 6}
+    >
+      {otpLoading ? "Verifying..." : "Verify Email"}
+    </button>
+
+    <button
+      type="button"
+      className="resend-otp-button"
+      onClick={sendProfileOTP}
+      disabled={otpLoading}
+    >
+      Resend OTP
+    </button>
+
+  </div>
+)}
   {/* BIO */}
 
   <div className="profile-edit-field">
@@ -1946,50 +1983,53 @@ useEffect(() => {
 
   </div>
 
+<div className="profile-stat-grid">
 
-  {/* STATS */}
+  <div>
 
-  <div className="profile-stat-grid">
+    <strong>
+      {customerStatsLoading
+        ? "..."
+        : customerStats.boxes_taken}
+    </strong>
 
-    <div>
-
-      <strong>
-        {loyaltyBoxes}
-      </strong>
-
-      <small>
-        Boxes
-      </small>
-
-    </div>
-
-    <div>
-
-      <strong>
-        32g
-      </strong>
-
-      <small>
-        Protein
-      </small>
-
-    </div>
-
-    <div>
-
-      <strong>
-        ₹89
-      </strong>
-
-      <small>
-        Regular
-      </small>
-
-    </div>
+    <small>
+      Boxes Taken
+    </small>
 
   </div>
 
 
+  <div>
+
+    <strong>
+      {customerStatsLoading
+        ? "..."
+        : customerStats.cancelled}
+    </strong>
+
+    <small>
+      Cancelled
+    </small>
+
+  </div>
+
+
+  <div>
+
+    <strong>
+      {customerStatsLoading
+        ? "..."
+        : customerStats.orders}
+    </strong>
+
+    <small>
+      Orders
+    </small>
+
+  </div>
+
+</div>
   {/* SAVE */}
 
   <button
@@ -2024,6 +2064,559 @@ useEffect(() => {
 </section>
     )}
   </>
+          )}
+          {/* ==========================================
+    GOFIT BUSINESS PROFILE
+========================================== */}
+
+{page === "business-profile" && user?.role === "admin" && (
+
+  <section className="business-profile">
+
+    {/* HEADER */}
+
+    <div className="business-profile-header">
+
+      <button
+        type="button"
+        className="business-back-button"
+        onClick={() => setPage("profile")}
+      >
+        ←
+      </button>
+
+      <div>
+        <small>
+          GOFIT BUSINESS
+        </small>
+
+        <h2>
+          GoFit Profile
+        </h2>
+
+        <p>
+          Your complete business journey
+        </p>
+      </div>
+
+      <div className="business-icon">
+        🏢
+      </div>
+
+    </div>
+
+
+    {/* BUSINESS INTRO */}
+
+    <section className="business-story-card">
+
+      <div className="business-story-icon">
+        🥗
+      </div>
+
+      <div>
+
+        <small>
+          ABOUT GOFIT
+        </small>
+
+        <h3>
+          GoFit Protein
+        </h3>
+
+        <p>
+          GoFit is a high-protein food business
+          focused on convenient, affordable meals
+          for students and fitness-focused customers.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    {/* BUSINESS OVERVIEW */}
+
+    <section className="business-section">
+
+      <div className="business-section-heading">
+
+        <div>
+          <small>
+            BUSINESS OVERVIEW
+          </small>
+
+          <h3>
+            GoFit at a Glance
+          </h3>
+        </div>
+
+        <span>
+          📊
+        </span>
+
+      </div>
+
+
+      <div className="business-metrics">
+
+        <div className="business-metric">
+
+          <span>
+            📦
+          </span>
+
+          <strong>
+            {adminOrders.reduce(
+              (total, order) =>
+                total +
+                Number(order.quantity || 0),
+              0
+            )}
+          </strong>
+
+          <small>
+            Boxes Ordered
+          </small>
+
+        </div>
+
+
+        <div className="business-metric">
+
+          <span>
+            🧾
+          </span>
+
+          <strong>
+            {adminOrders.length}
+          </strong>
+
+          <small>
+            Total Orders
+          </small>
+
+        </div>
+
+
+        <div className="business-metric">
+
+          <span>
+            ₹
+          </span>
+
+          <strong>
+            ₹
+            {adminOrders.reduce(
+              (total, order) =>
+                total +
+                Number(
+                  order.total_amount || 0
+                ),
+              0
+            )}
+          </strong>
+
+          <small>
+            Order Revenue
+          </small>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    {/* GOFIT JOURNEY */}
+
+    <section className="business-section">
+
+      <div className="business-section-heading">
+
+        <div>
+          <small>
+            OUR JOURNEY
+          </small>
+
+          <h3>
+            GoFit Timeline
+          </h3>
+        </div>
+
+        <span>
+          🗓️
+        </span>
+
+      </div>
+
+
+      <div className="business-timeline">
+
+        <div className="business-timeline-item">
+
+          <div className="timeline-dot">
+            1
+          </div>
+
+          <div>
+
+            <h4>
+              GoFit Started
+            </h4>
+
+            <p>
+              Add the official GoFit starting
+              date and launch details here.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div className="business-timeline-item">
+
+          <div className="timeline-dot">
+            2
+          </div>
+
+          <div>
+
+            <h4>
+              First Products
+            </h4>
+
+            <p>
+              Record the first GoFit boxes,
+              products and original pricing.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div className="business-timeline-item">
+
+          <div className="timeline-dot">
+            3
+          </div>
+
+          <div>
+
+            <h4>
+              Business Growth
+            </h4>
+
+            <p>
+              Add important sales, customer
+              and product milestones.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div className="business-timeline-item">
+
+          <div className="timeline-dot">
+            4
+          </div>
+
+          <div>
+
+            <h4>
+              Today
+            </h4>
+
+            <p>
+              Track the current GoFit business
+              performance from your records.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    {/* FINANCIAL OVERVIEW */}
+
+    <section className="business-section">
+
+      <div className="business-section-heading">
+
+        <div>
+          <small>
+            FINANCIAL OVERVIEW
+          </small>
+
+          <h3>
+            Business Finance
+          </h3>
+        </div>
+
+        <span>
+          💰
+        </span>
+
+      </div>
+
+
+      <div className="finance-grid">
+
+        <div className="finance-card">
+
+          <span>
+            💼
+          </span>
+
+          <strong>
+            ₹—
+          </strong>
+
+          <small>
+            Total Investment
+          </small>
+
+        </div>
+
+
+        <div className="finance-card">
+
+          <span>
+            💸
+          </span>
+
+          <strong>
+            ₹—
+          </strong>
+
+          <small>
+            Total Expenses
+          </small>
+
+        </div>
+
+
+        <div className="finance-card">
+
+          <span>
+            💵
+          </span>
+
+          <strong>
+            ₹—
+          </strong>
+
+          <small>
+            Total Revenue
+          </small>
+
+        </div>
+
+
+        <div className="finance-card">
+
+          <span>
+            📈
+          </span>
+
+          <strong>
+            ₹—
+          </strong>
+
+          <small>
+            Net Profit
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <div className="excel-notice">
+
+        <span>
+          📊
+        </span>
+
+        <div>
+
+          <strong>
+            Financial data
+          </strong>
+
+          <p>
+            Upload your GoFit Excel workbook
+            to connect investment, expenses,
+            revenue and profit automatically.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    {/* BUSINESS ANALYTICS */}
+
+    <section className="business-section">
+
+      <div className="business-section-heading">
+
+        <div>
+          <small>
+            ANALYTICS
+          </small>
+
+          <h3>
+            Business Performance
+          </h3>
+        </div>
+
+        <span>
+          📈
+        </span>
+
+      </div>
+
+
+      <div className="analytics-list">
+
+        <div className="analytics-row">
+
+          <div>
+            <span>📦</span>
+
+            <div>
+              <strong>
+                Boxes Sold
+              </strong>
+
+              <small>
+                Total quantity from orders
+              </small>
+            </div>
+          </div>
+
+          <strong>
+            {adminOrders.reduce(
+              (total, order) =>
+                total +
+                Number(order.quantity || 0),
+              0
+            )}
+          </strong>
+
+        </div>
+
+
+        <div className="analytics-row">
+
+          <div>
+            <span>🧾</span>
+
+            <div>
+              <strong>
+                Orders
+              </strong>
+
+              <small>
+                Total customer orders
+              </small>
+            </div>
+          </div>
+
+          <strong>
+            {adminOrders.length}
+          </strong>
+
+        </div>
+
+
+        <div className="analytics-row">
+
+          <div>
+            <span>💰</span>
+
+            <div>
+              <strong>
+                Order Revenue
+              </strong>
+
+              <small>
+                Revenue from recorded orders
+              </small>
+            </div>
+          </div>
+
+          <strong>
+            ₹
+            {adminOrders.reduce(
+              (total, order) =>
+                total +
+                Number(
+                  order.total_amount || 0
+                ),
+              0
+            )}
+          </strong>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    {/* EXCEL */}
+
+    <section className="excel-upload-card">
+
+      <div className="excel-icon">
+        📊
+      </div>
+
+      <div>
+
+        <small>
+          BUSINESS RECORDS
+        </small>
+
+        <h3>
+          Connect Your Excel Data
+        </h3>
+
+        <p>
+          Your investment, spending, revenue,
+          profit and other business records
+          will be connected here.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    {/* BACK */}
+
+    <button
+      type="button"
+      className="business-back-full"
+      onClick={() => setPage("profile")}
+    >
+      ← Back to Admin Profile
+    </button>
+
+  </section>
+
 )}
           {/* ==========================================
     ADMIN DASHBOARD
@@ -2462,18 +3055,8 @@ useEffect(() => {
 
     </div>
 
-
-    {/* BACK */}
-
-    <button
-      type="button"
-      className="admin-back-button"
-      onClick={() => setPage("profile")}
-    >
-      ← Back to Admin Profile
-    </button>
-
   </section>
+
 )}
 
 {/* SUBSCRIPTIONS */}
@@ -2514,7 +3097,6 @@ useEffect(() => {
     </div>
 
     <section className="subscription-plans">
-
       <div className="subscription-section-title">
         <div>
           <small>CHOOSE YOUR PLAN</small>
@@ -2531,7 +3113,6 @@ useEffect(() => {
             plan.popular ? "subscription-popular" : ""
           }`}
         >
-
           {plan.popular && (
             <div className="popular-ribbon">
               MOST POPULAR
@@ -2539,7 +3120,6 @@ useEffect(() => {
           )}
 
           <div className="subscription-card-top">
-
             <div className="subscription-plan-icon">
               {plan.icon}
             </div>
@@ -2547,15 +3127,10 @@ useEffect(() => {
             <div>
               <small>{plan.tag}</small>
 
-              <h3>
-                {plan.name}
-              </h3>
+              <h3>{plan.name}</h3>
 
-              <p>
-                {plan.duration}
-              </p>
+              <p>{plan.duration}</p>
             </div>
-
           </div>
 
           <p className="subscription-description">
@@ -2563,74 +3138,50 @@ useEffect(() => {
           </p>
 
           <div className="subscription-price">
-
             <div>
-              <span className="old-price">
-                ₹{plan.oldPrice}
-              </span>
-
-              <strong>
-                ₹{plan.price}
-              </strong>
+              <span className="old-price">₹{plan.oldPrice}</span>
+              <strong>₹{plan.price}</strong>
             </div>
 
-            <span className="save-badge">
-              SAVE ₹{plan.save}
-            </span>
-
+            <span className="save-badge">SAVE ₹{plan.save}</span>
           </div>
 
-          <div className="per-box">
-            {plan.perBox}
-          </div>
+          <div className="per-box">{plan.perBox}</div>
 
           <div className="subscription-features">
-
             <span>✓ 36g protein every box</span>
             <span>✓ Free delivery</span>
             <span>✓ Flexible delivery location</span>
             <span>✓ Add-ons available</span>
-
           </div>
 
           <button
             className="subscribe-button"
             onClick={() => {
               setSelectedPlan(plan);
-              showMessage(
-                `${plan.name} selected ✓`
-              );
+              showMessage(`${plan.name} selected ✓`);
             }}
           >
             Subscribe Now →
           </button>
-
         </article>
       ))}
-
     </section>
 
     {/* SPECIAL DISCOUNTS */}
 
     <section className="special-discounts">
-
       <div className="discount-heading">
         <small>SPECIAL GOFIT OFFERS</small>
         <h3>Made For Your Routine</h3>
       </div>
 
       <div className="discount-grid">
-
         <div className="discount-card student-discount">
-
-          <div className="discount-icon">
-            🎓
-          </div>
+          <div className="discount-icon">🎓</div>
 
           <div>
-            <strong>
-              Student Discount
-            </strong>
+            <strong>Student Discount</strong>
 
             <p>
               Extra <b>5% OFF</b> for students
@@ -2638,22 +3189,14 @@ useEffect(() => {
             </p>
           </div>
 
-          <span>
-            STUDENT
-          </span>
-
+          <span>STUDENT</span>
         </div>
 
         <div className="discount-card office-discount">
-
-          <div className="discount-icon">
-            💼
-          </div>
+          <div className="discount-icon">💼</div>
 
           <div>
-            <strong>
-              Office Plans
-            </strong>
+            <strong>Office Plans</strong>
 
             <p>
               Special group pricing for
@@ -2661,62 +3204,45 @@ useEffect(() => {
             </p>
           </div>
 
-          <span>
-            OFFICE
-          </span>
-
+          <span>OFFICE</span>
         </div>
-
       </div>
-
     </section>
 
     {/* WHY SUBSCRIBE */}
 
     <section className="subscription-benefits">
-
-      <h3>
-        Why Subscribe?
-      </h3>
+      <h3>Why Subscribe?</h3>
 
       <div className="benefit-row">
-
         <div>
           <span>💰</span>
           <strong>Save More</strong>
-          <small>
-            Lower price per box
-          </small>
+          <small>Lower price per box</small>
         </div>
 
         <div>
           <span>🥗</span>
           <strong>Eat Better</strong>
-          <small>
-            36g protein every box
-          </small>
+          <small>36g protein every box</small>
         </div>
 
         <div>
           <span>📦</span>
           <strong>Stay Consistent</strong>
-          <small>
-            No daily ordering
-          </small>
+          <small>No daily ordering</small>
         </div>
-
       </div>
-
     </section>
 
     <div className="subscription-note">
       🎁 Buy 10 paid GoFit boxes and unlock your
       <strong> next Regular Box FREE.</strong>
     </div>
-
   </>
 )}
-          {/* MENU */}
+
+{/* MENU */}
 
           {page === "menu" && (
             <>
@@ -3122,13 +3648,13 @@ onClick={() => openLocationModal("other")}
                   </div>
                 </section>
 
-<button
-    type="button"
-    className="confirm"
-    onClick={() => setPaymentModal(true)}
->
-    ➤ &nbsp; Confirm & Send Order to Kitchen
-</button>
+                <button
+                  type="button"
+                  className="confirm"
+                  onClick={() => setPaymentModal(true)}
+                >
+                  ➤ &nbsp; Confirm & Send Order to Kitchen
+                </button>
               </section>
             </>
           )}
@@ -3540,38 +4066,44 @@ onClick={() => openLocationModal("other")}
 
   </div>
 )}
+<nav className="bottom-nav">
 
-    {user?.role !== "admin" && (
-      <nav className="bottom-nav">
-        <NavButton
-          icon="🍴"
-          label="Menu"
-          active={page === "menu"}
-          onClick={() => setPage("menu")}
-        />
+  <NavButton
+    icon="🍴"
+    label="Menu"
+    active={page === "menu"}
+    onClick={() => setPage("menu")}
+  />
 
-        <NavButton
-          icon="🛒"
-          label="Cart"
-          active={page === "cart"}
-          onClick={() => setPage("cart")}
-        />
+  <NavButton
+    icon="🛒"
+    label="Cart"
+    active={page === "cart"}
+    onClick={() => setPage("cart")}
+  />
 
-        <NavButton
-          icon="🎟️"
-          label="Subscribe"
-          active={page === "subscriptions"}
-          onClick={() => setPage("subscriptions")}
-        />
+  <NavButton
+    icon="🎟️"
+    label="Subscribe"
+    active={page === "subscriptions"}
+    onClick={() => setPage("subscriptions")}
+  />
 
-        <NavButton
-          icon="↻"
-          label="Track"
-          active={page === "track"}
-          onClick={() => setPage("track")}
-        />
-      </nav>
-    )}
+  <NavButton
+    icon="↻"
+    label="Track"
+    active={page === "track"}
+    onClick={() => setPage("track")}
+  />
+
+<NavButton
+  icon={user?.role === "admin" ? "🛡️" : "👤"}
+  label="Profile"
+  active={page === "profile"}
+  onClick={() => setPage("profile")}
+/>
+
+</nav>
   </div>
 </div>
   );
