@@ -16,3 +16,13 @@ build/
 
 .vscode/
 .DS_Store
+
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+node_modules/
+venv/
+.venv/
+__pycache__/

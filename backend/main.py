@@ -29,20 +29,31 @@ from groq import Groq
 from jose import jwt, JWTError
 
 
+
 # =========================================================
 # LOAD ENVIRONMENT
 # =========================================================
 
-load_dotenv()
-
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-
-SUPABASE_SECRET_KEY = os.getenv(
-    "SUPABASE_SECRET_KEY"
+load_dotenv(
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        ".env"
+    ),
+    override=True
 )
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+SUPABASE_URL = (
+    os.getenv("SUPABASE_URL") or ""
+).strip().rstrip("/")
+
+SUPABASE_SECRET_KEY = (
+    os.getenv("SUPABASE_SECRET_KEY") or ""
+).strip()
+
+GROQ_API_KEY = (
+    os.getenv("GROQ_API_KEY") or ""
+).strip()
+
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 RESEND_FROM_EMAIL = os.getenv(
     "RESEND_FROM_EMAIL",
@@ -53,6 +64,7 @@ GROQ_MODEL = os.getenv(
     "GROQ_MODEL",
     "llama-3.3-70b-versatile"
 )
+
 
 ADMIN_PHONE = "".join(
     character
@@ -96,20 +108,31 @@ if not JWT_SECRET:
 # =========================================================
 
 supabase = None
-
 groq_client = None
 
-
+# Initialize Supabase
 if SUPABASE_URL and SUPABASE_SECRET_KEY:
+    from urllib.parse import urlparse
+
+    parsed_url = urlparse(SUPABASE_URL)
+
+    if (
+        parsed_url.scheme != "https"
+        or not parsed_url.netloc
+        or not parsed_url.netloc.endswith(".supabase.co")
+    ):
+        raise ValueError(
+            "Invalid SUPABASE_URL. Check backend/.env "
+            "and copy the Project URL from Supabase."
+        )
 
     supabase = create_client(
         SUPABASE_URL,
         SUPABASE_SECRET_KEY
     )
 
-
+# Initialize Groq
 if GROQ_API_KEY:
-
     groq_client = Groq(
         api_key=GROQ_API_KEY
     )

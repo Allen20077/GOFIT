@@ -150,7 +150,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 1px solid #29435a;
+                border: 1px solid rgb(41, 67, 90);
                 border-radius: 50%;
                 background: #102039;
                 color: #ffffff;
@@ -2797,39 +2797,52 @@ SMALL REWARD CARD
                 color: #778ba1;
                 margin: 0;
             }
+            /* Admin profile: align all buttons in one column */
             
             .admin-profile-actions {
-                width: 100%;
                 display: flex;
                 flex-direction: column;
-                gap: 12px;
-                margin-top: 4px;
+                align-items: stretch;
+                width: 100%;
+                gap: 10px;
             }
             
-            .logout-button {
+            .admin-profile-actions>button {
                 width: 100%;
-                height: 48px;
+                height: 58px;
+                min-height: 58px;
                 margin: 0;
-                padding: 0 16px;
                 box-sizing: border-box;
-                border: 1px solid #493040;
-                border-radius: 14px;
-                background: #19121b;
-                color: #ff718d;
-                font-size: 10px;
-                font-weight: 800;
+                flex-shrink: 0;
+            }
+            /* Logout button: matching size, red styling */
+            
+            .logout-button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                min-height: 42px;
+                margin-top: 12px;
+                padding: 10px 16px;
+                background: transparent;
+                color: #ff6b6b;
+                border: 1px solid #ff6b6b;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 600;
                 cursor: pointer;
-                transition: all .2s ease;
+                transition: background 0.2s ease, color 0.2s ease;
             }
             
             .logout-button:hover {
-                background: #241722;
-                border-color: #ff718d;
-                transform: translateY(-1px);
+                background: #ff6b6b;
+                color: #08111f;
             }
             
-            .logout-button:active {
-                transform: scale(.98);
+            .logout-button:focus-visible {
+                outline: 2px solid #ff6b6b;
+                outline-offset: 3px;
             }
             
             .profile-stat-grid {

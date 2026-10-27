@@ -141,6 +141,21 @@ function NavButton({
 }
 
 function App() {
+  
+  const openGoFitWhatsApp = (planName) => {
+    const phone = "918951056405"; // GoFit WhatsApp number
+
+    const message = encodeURIComponent(
+      `Hi GoFit! I'm interested in the ${planName} subscription. Please share more information.`
+    );
+
+    window.open(
+      `https://wa.me/${phone}?text=${message}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
   const [page, setPage] = useState("menu");
   // ================================
 // USER / ADMIN LOGIN
@@ -1589,6 +1604,12 @@ const response = await fetch(
         <input
           type="password"
           value={loginPassword}
+          onKeyDown={(e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    loginUser();
+  }
+}}
           onChange={(e) =>
             setLoginPassword(e.target.value)
           }
@@ -1636,31 +1657,34 @@ const response = await fetch(
         <div className="admin-access-badge">
           🔐 Full Admin Access
                     </div>
-                    
-<button                  
-  type="button"
-  className="admin-dashboard-button"
-  onClick={() => {
-    setPage("admin");
-  }}
->
-  📊 Open Admin Dashboard
-</button>
 
-<button
-  type="button"
-  className="admin-business-button"
-  onClick={() => {
-    setPage("business-profile");
-  }}
->
-  🏢 GoFit Business Profile
-  <small>
-    History • Finance • Growth
-  </small>
-                    </button>
-                    
-                    
+<div className="admin-profile-actions">
+  <button
+    type="button"
+    className="admin-dashboard-button"
+    onClick={() => setPage("admin")}
+  >
+    📊 Open Admin Dashboard
+  </button>
+
+  <button
+    type="button"
+    className="admin-business-button"
+    onClick={() => setPage("business-profile")}
+  >
+    🏢 GoFit Business Profile
+    <small>History • Finance • Growth</small>
+  </button>
+
+  <button
+    type="button"
+    className="logout-button"
+    onClick={logoutUser}
+  >
+    🚪 Logout
+  </button>
+</div>
+
       </section>
     ) : (
       <section className="customer-profile">
@@ -2069,1673 +2093,1648 @@ const response = await fetch(
     GOFIT BUSINESS PROFILE
 ========================================== */}
 
-{page === "business-profile" && user?.role === "admin" && (
+          {page === "business-profile" && user?.role === "admin" && (
 
-  <section className="business-profile">
+            <section className="business-profile">
 
-    {/* HEADER */}
+              {/* HEADER */}
 
-    <div className="business-profile-header">
+              <div className="business-profile-header">
+                <div>
+                  <small>
+                    GOFIT BUSINESS
+                  </small>
 
-      <button
-        type="button"
-        className="business-back-button"
-        onClick={() => setPage("profile")}
-      >
-        ←
-      </button>
+                  <h2>
+                    GoFit Profile
+                  </h2>
 
-      <div>
-        <small>
-          GOFIT BUSINESS
-        </small>
+                  <p>
+                    Your complete business journey
+                  </p>
+                </div>
 
-        <h2>
-          GoFit Profile
-        </h2>
+                <div className="business-icon">
+                  🏢
+                </div>
 
-        <p>
-          Your complete business journey
-        </p>
-      </div>
+              </div>
 
-      <div className="business-icon">
-        🏢
-      </div>
 
-    </div>
+              {/* BUSINESS INTRO */}
 
+              <section className="business-story-card">
 
-    {/* BUSINESS INTRO */}
+                <div className="business-story-icon">
+                  🥗
+                </div>
 
-    <section className="business-story-card">
+                <div>
 
-      <div className="business-story-icon">
-        🥗
-      </div>
+                  <small>
+                    ABOUT GOFIT
+                  </small>
 
-      <div>
+                  <h3>
+                    GoFit Protein
+                  </h3>
 
-        <small>
-          ABOUT GOFIT
-        </small>
+                  <p>
+                    GoFit is a high-protein food business
+                    focused on convenient, affordable meals
+                    for students and fitness-focused customers.
+                  </p>
 
-        <h3>
-          GoFit Protein
-        </h3>
+                </div>
 
-        <p>
-          GoFit is a high-protein food business
-          focused on convenient, affordable meals
-          for students and fitness-focused customers.
-        </p>
+              </section>
 
-      </div>
 
-    </section>
+              {/* BUSINESS OVERVIEW */}
 
+              <section className="business-section">
 
-    {/* BUSINESS OVERVIEW */}
-
-    <section className="business-section">
-
-      <div className="business-section-heading">
-
-        <div>
-          <small>
-            BUSINESS OVERVIEW
-          </small>
-
-          <h3>
-            GoFit at a Glance
-          </h3>
-        </div>
-
-        <span>
-          📊
-        </span>
-
-      </div>
-
-
-      <div className="business-metrics">
-
-        <div className="business-metric">
-
-          <span>
-            📦
-          </span>
-
-          <strong>
-            {adminOrders.reduce(
-              (total, order) =>
-                total +
-                Number(order.quantity || 0),
-              0
-            )}
-          </strong>
-
-          <small>
-            Boxes Ordered
-          </small>
-
-        </div>
-
-
-        <div className="business-metric">
-
-          <span>
-            🧾
-          </span>
-
-          <strong>
-            {adminOrders.length}
-          </strong>
-
-          <small>
-            Total Orders
-          </small>
-
-        </div>
-
-
-        <div className="business-metric">
-
-          <span>
-            ₹
-          </span>
-
-          <strong>
-            ₹
-            {adminOrders.reduce(
-              (total, order) =>
-                total +
-                Number(
-                  order.total_amount || 0
-                ),
-              0
-            )}
-          </strong>
-
-          <small>
-            Order Revenue
-          </small>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    {/* GOFIT JOURNEY */}
-
-    <section className="business-section">
-
-      <div className="business-section-heading">
-
-        <div>
-          <small>
-            OUR JOURNEY
-          </small>
-
-          <h3>
-            GoFit Timeline
-          </h3>
-        </div>
-
-        <span>
-          🗓️
-        </span>
-
-      </div>
-
-
-      <div className="business-timeline">
-
-        <div className="business-timeline-item">
-
-          <div className="timeline-dot">
-            1
-          </div>
-
-          <div>
-
-            <h4>
-              GoFit Started
-            </h4>
-
-            <p>
-              Add the official GoFit starting
-              date and launch details here.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div className="business-timeline-item">
-
-          <div className="timeline-dot">
-            2
-          </div>
-
-          <div>
-
-            <h4>
-              First Products
-            </h4>
-
-            <p>
-              Record the first GoFit boxes,
-              products and original pricing.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div className="business-timeline-item">
-
-          <div className="timeline-dot">
-            3
-          </div>
-
-          <div>
-
-            <h4>
-              Business Growth
-            </h4>
-
-            <p>
-              Add important sales, customer
-              and product milestones.
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <div className="business-timeline-item">
-
-          <div className="timeline-dot">
-            4
-          </div>
-
-          <div>
-
-            <h4>
-              Today
-            </h4>
-
-            <p>
-              Track the current GoFit business
-              performance from your records.
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    {/* FINANCIAL OVERVIEW */}
-
-    <section className="business-section">
-
-      <div className="business-section-heading">
-
-        <div>
-          <small>
-            FINANCIAL OVERVIEW
-          </small>
-
-          <h3>
-            Business Finance
-          </h3>
-        </div>
-
-        <span>
-          💰
-        </span>
-
-      </div>
-
-
-      <div className="finance-grid">
-
-        <div className="finance-card">
-
-          <span>
-            💼
-          </span>
-
-          <strong>
-            ₹—
-          </strong>
-
-          <small>
-            Total Investment
-          </small>
-
-        </div>
-
-
-        <div className="finance-card">
-
-          <span>
-            💸
-          </span>
-
-          <strong>
-            ₹—
-          </strong>
-
-          <small>
-            Total Expenses
-          </small>
-
-        </div>
-
-
-        <div className="finance-card">
-
-          <span>
-            💵
-          </span>
-
-          <strong>
-            ₹—
-          </strong>
-
-          <small>
-            Total Revenue
-          </small>
-
-        </div>
-
-
-        <div className="finance-card">
-
-          <span>
-            📈
-          </span>
-
-          <strong>
-            ₹—
-          </strong>
-
-          <small>
-            Net Profit
-          </small>
-
-        </div>
-
-      </div>
-
-
-      <div className="excel-notice">
-
-        <span>
-          📊
-        </span>
-
-        <div>
-
-          <strong>
-            Financial data
-          </strong>
-
-          <p>
-            Upload your GoFit Excel workbook
-            to connect investment, expenses,
-            revenue and profit automatically.
-          </p>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    {/* BUSINESS ANALYTICS */}
-
-    <section className="business-section">
-
-      <div className="business-section-heading">
-
-        <div>
-          <small>
-            ANALYTICS
-          </small>
-
-          <h3>
-            Business Performance
-          </h3>
-        </div>
-
-        <span>
-          📈
-        </span>
-
-      </div>
-
-
-      <div className="analytics-list">
-
-        <div className="analytics-row">
-
-          <div>
-            <span>📦</span>
-
-            <div>
-              <strong>
-                Boxes Sold
-              </strong>
-
-              <small>
-                Total quantity from orders
-              </small>
-            </div>
-          </div>
-
-          <strong>
-            {adminOrders.reduce(
-              (total, order) =>
-                total +
-                Number(order.quantity || 0),
-              0
-            )}
-          </strong>
-
-        </div>
-
-
-        <div className="analytics-row">
-
-          <div>
-            <span>🧾</span>
-
-            <div>
-              <strong>
-                Orders
-              </strong>
-
-              <small>
-                Total customer orders
-              </small>
-            </div>
-          </div>
-
-          <strong>
-            {adminOrders.length}
-          </strong>
-
-        </div>
-
-
-        <div className="analytics-row">
-
-          <div>
-            <span>💰</span>
-
-            <div>
-              <strong>
-                Order Revenue
-              </strong>
-
-              <small>
-                Revenue from recorded orders
-              </small>
-            </div>
-          </div>
-
-          <strong>
-            ₹
-            {adminOrders.reduce(
-              (total, order) =>
-                total +
-                Number(
-                  order.total_amount || 0
-                ),
-              0
-            )}
-          </strong>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    {/* EXCEL */}
-
-    <section className="excel-upload-card">
-
-      <div className="excel-icon">
-        📊
-      </div>
-
-      <div>
-
-        <small>
-          BUSINESS RECORDS
-        </small>
-
-        <h3>
-          Connect Your Excel Data
-        </h3>
-
-        <p>
-          Your investment, spending, revenue,
-          profit and other business records
-          will be connected here.
-        </p>
-
-      </div>
-
-    </section>
-
-
-    {/* BACK */}
-
-    <button
-      type="button"
-      className="business-back-full"
-      onClick={() => setPage("profile")}
-    >
-      ← Back to Admin Profile
-    </button>
-
-  </section>
-
-)}
-          {/* ==========================================
-    ADMIN DASHBOARD
-========================================== */}
-
-{page === "admin" && user?.role === "admin" && (
-  <section className="admin-dashboard">
-
-    {/* HEADER */}
-
-    <div className="admin-dashboard-header">
-
-      <div>
-        <small>
-          GOFIT ADMIN
-        </small>
-
-        <h2>
-          Order Dashboard
-        </h2>
-
-        <p>
-          Manage all GoFit orders
-        </p>
-      </div>
-
-      <div className="admin-shield">
-        🛡️
-      </div>
-
-    </div>
-
-
-    {/* NOTIFICATION */}
-
-    <div className="admin-notification-card">
-
-      <div className="notification-icon">
-        🔔
-      </div>
-
-      <div>
-        <strong>
-          New Order Alerts
-        </strong>
-
-        <p>
-          {adminNotificationCount > 0
-            ? `${adminNotificationCount} new order${
-                adminNotificationCount > 1
-                  ? "s"
-                  : ""
-              }`
-            : "No new orders"}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={enableAdminNotifications}
-      >
-        Enable
-      </button>
-
-    </div>
-
-
-    {/* STATISTICS */}
-
-    <div className="admin-stats">
-
-      <div className="admin-stat-card">
-
-        <span>
-          📦
-        </span>
-
-        <strong>
-          {adminOrders.length}
-        </strong>
-
-        <small>
-          Total Orders
-        </small>
-
-      </div>
-
-
-      <div className="admin-stat-card">
-
-        <span>
-          🥗
-        </span>
-
-        <strong>
-          {adminOrders.reduce(
-            (total, order) =>
-              total +
-              Number(order.quantity || 0),
-            0
-          )}
-        </strong>
-
-        <small>
-          Boxes Sold
-        </small>
-
-      </div>
-
-
-      <div className="admin-stat-card">
-
-        <span>
-          ₹
-        </span>
-
-        <strong>
-          ₹
-          {adminOrders.reduce(
-            (total, order) =>
-              total +
-              Number(
-                order.total_amount || 0
-              ),
-            0
-          )}
-        </strong>
-
-        <small>
-          Revenue
-        </small>
-
-      </div>
-
-    </div>
-
-
-    {/* ORDER HISTORY */}
-
-    <div className="admin-orders-section">
-
-      <div className="admin-section-title">
-
-        <div>
-          <small>
-            LIVE ORDERS
-          </small>
-
-          <h3>
-            Order History
-          </h3>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => loadAdminOrders()}
-        >
-          ↻
-        </button>
-
-      </div>
-
-
-      {adminLoading ? (
-
-        <div className="admin-empty">
-          <div className="admin-loading">
-            ⟳
-          </div>
-
-          <p>
-            Loading orders...
-          </p>
-        </div>
-
-      ) : adminOrders.length === 0 ? (
-
-        <div className="admin-empty">
-
-          <div>
-            📦
-          </div>
-
-          <h3>
-            No Orders Yet
-          </h3>
-
-          <p>
-            New GoFit orders will appear here.
-          </p>
-
-        </div>
-
-      ) : (
-
-        <div className="admin-order-list">
-
-          {[...adminOrders]
-            .reverse()
-            .map((order, index) => (
-
-              <article
-                className="admin-order-card"
-                key={
-                  order.id ||
-                  order.order_id ||
-                  index
-                }
-              >
-
-                {/* ORDER TOP */}
-
-                <div className="admin-order-top">
+                <div className="business-section-heading">
 
                   <div>
-
                     <small>
-                      ORDER #
-                      {order.id ||
-                        order.order_id ||
-                        index + 1}
+                      BUSINESS OVERVIEW
                     </small>
 
                     <h3>
-                      {order.customer_name ||
-                        "Customer"}
+                      GoFit at a Glance
                     </h3>
-
                   </div>
 
-                  <strong>
-                    ₹
-                    {Number(
-                      order.total_amount || 0
-                    )}
-                  </strong>
+                  <span>
+                    📊
+                  </span>
 
                 </div>
 
 
-                {/* CUSTOMER */}
+                <div className="business-metrics">
 
-                <div className="admin-order-info">
+                  <div className="business-metric">
 
-                  <div>
-                    <span>
-                      📱
-                    </span>
-
-                    <p>
-                      {order.phone ||
-                        "No phone"}
-                    </p>
-                  </div>
-
-
-                  <div>
                     <span>
                       📦
                     </span>
 
-                    <p>
-                      {order.quantity || 0} Box
-                      {(Number(
-                        order.quantity || 0
-                      ) !== 1)
-                        ? "es"
-                        : ""}
-                    </p>
+                    <strong>
+                      {adminOrders.reduce(
+                        (total, order) =>
+                          total +
+                          Number(order.quantity || 0),
+                        0
+                      )}
+                    </strong>
+
+                    <small>
+                      Boxes Ordered
+                    </small>
+
                   </div>
 
 
-                  <div>
+                  <div className="business-metric">
+
                     <span>
-                      📍
+                      🧾
                     </span>
 
-                    <p>
-                      {order.pickup_location ||
-                        "Location not provided"}
-                    </p>
+                    <strong>
+                      {adminOrders.length}
+                    </strong>
+
+                    <small>
+                      Total Orders
+                    </small>
+
                   </div>
 
 
-                  <div>
+                  <div className="business-metric">
+
                     <span>
-                      💳
+                      ₹
                     </span>
 
-                    <p>
-                      {order.payment_method ||
-                        "COD"}
-                    </p>
+                    <strong>
+                      ₹
+                      {adminOrders.reduce(
+                        (total, order) =>
+                          total +
+                          Number(
+                            order.total_amount || 0
+                          ),
+                        0
+                      )}
+                    </strong>
+
+                    <small>
+                      Order Revenue
+                    </small>
+
                   </div>
 
                 </div>
 
+              </section>
 
-                {/* ADDONS */}
 
-                {Array.isArray(
-                  order.addons
-                ) &&
-                  order.addons.length > 0 && (
+              {/* GOFIT JOURNEY */}
 
-                    <div className="admin-addons">
+              <section className="business-section">
 
-                      <small>
-                        ADD-ONS
-                      </small>
+                <div className="business-section-heading">
+
+                  <div>
+                    <small>
+                      OUR JOURNEY
+                    </small>
+
+                    <h3>
+                      GoFit Timeline
+                    </h3>
+                  </div>
+
+                  <span>
+                    🗓️
+                  </span>
+
+                </div>
+
+
+                <div className="business-timeline">
+
+                  <div className="business-timeline-item">
+
+                    <div className="timeline-dot">
+                      1
+                    </div>
+
+                    <div>
+
+                      <h4>
+                        GoFit Started
+                      </h4>
 
                       <p>
-                        {order.addons
-                          .map(
-                            (addon) =>
-                              addon.name
-                          )
-                          .join(", ")}
+                        Add the official GoFit starting
+                        date and launch details here.
                       </p>
 
                     </div>
 
-                  )}
+                  </div>
 
 
-                {/* STATUS */}
+                  <div className="business-timeline-item">
 
-                <div className="admin-order-bottom">
-<div className="admin-order-actions">
-
-  <button
-    onClick={() =>
-      updateOrderStatus(
-        order.id,
-        "confirmed"
-      )
-    }
-  >
-    ✓ Confirm
-  </button>
-
-  <button
-    onClick={() =>
-      updateOrderStatus(
-        order.id,
-        "preparing"
-      )
-    }
-  >
-    👨‍🍳 Preparing
-  </button>
-
-  <button
-    onClick={() =>
-      updateOrderStatus(
-        order.id,
-        "ready"
-      )
-    }
-  >
-    🍱 Ready
-  </button>
-
-  <button
-    onClick={() =>
-      updateOrderStatus(
-        order.id,
-        "out_for_delivery"
-      )
-    }
-  >
-    🚚 Delivery
-  </button>
-
-  <button
-    onClick={() =>
-      updateOrderStatus(
-        order.id,
-        "completed"
-      )
-    }
-  >
-    ✓ Completed
-  </button>
-
-  <button
-    className="reject-order"
-    onClick={() =>
-      rejectOrder(order.id)
-    }
-  >
-    ✕ Reject
-  </button>
-
-  <button
-    className="cancel-order"
-    onClick={() =>
-      cancelOrder(order.id)
-    }
-  >
-    🗑 Cancel
-  </button>
-
-</div>
-                  <span
-                    className={`order-status ${
-                      order.status ||
-                      order.order_status ||
-                      "new"
-                    }`}
-                  >
-                    {String(
-                      order.status ||
-                        order.order_status ||
-                        "new"
-                    ).toUpperCase()}
-                  </span>
-
-                  <small>
-                    {order.created_at
-                      ? new Date(
-                          order.created_at
-                        ).toLocaleString()
-                      : "Recent order"}
-                  </small>
-
-                </div>
-
-              </article>
-
-            ))}
-
-        </div>
-
-      )}
-
-    </div>
-
-  </section>
-
-)}
-
-{/* SUBSCRIPTIONS */}
-
-{page === "subscriptions" && (
-  <>
-    <section className="subscription-hero">
-      <div>
-        <span className="subscription-kicker">
-          GOFIT MEMBERSHIP
-        </span>
-
-        <h2>
-          Eat Protein.<br />
-          <span>Save More.</span>
-        </h2>
-
-        <p>
-          Subscribe to GoFit Regular Boxes and make
-          your daily protein routine easier and cheaper.
-        </p>
-      </div>
-
-      <div className="subscription-hero-icon">
-        🥗
-      </div>
-    </section>
-
-    <div className="subscription-offer">
-      <div className="offer-icon">🎁</div>
-
-      <div>
-        <strong>Subscription Perks</strong>
-        <p>
-          Save on every box + FREE delivery
-        </p>
-      </div>
-    </div>
-
-    <section className="subscription-plans">
-      <div className="subscription-section-title">
-        <div>
-          <small>CHOOSE YOUR PLAN</small>
-          <h3>Build Your Routine</h3>
-        </div>
-
-        <span>36g Protein / Box</span>
-      </div>
-
-      {SUBSCRIPTION_PLANS.map((plan) => (
-        <article
-          key={plan.id}
-          className={`subscription-card ${
-            plan.popular ? "subscription-popular" : ""
-          }`}
-        >
-          {plan.popular && (
-            <div className="popular-ribbon">
-              MOST POPULAR
-            </div>
-          )}
-
-          <div className="subscription-card-top">
-            <div className="subscription-plan-icon">
-              {plan.icon}
-            </div>
-
-            <div>
-              <small>{plan.tag}</small>
-
-              <h3>{plan.name}</h3>
-
-              <p>{plan.duration}</p>
-            </div>
-          </div>
-
-          <p className="subscription-description">
-            {plan.description}
-          </p>
-
-          <div className="subscription-price">
-            <div>
-              <span className="old-price">₹{plan.oldPrice}</span>
-              <strong>₹{plan.price}</strong>
-            </div>
-
-            <span className="save-badge">SAVE ₹{plan.save}</span>
-          </div>
-
-          <div className="per-box">{plan.perBox}</div>
-
-          <div className="subscription-features">
-            <span>✓ 36g protein every box</span>
-            <span>✓ Free delivery</span>
-            <span>✓ Flexible delivery location</span>
-            <span>✓ Add-ons available</span>
-          </div>
-
-          <button
-            className="subscribe-button"
-            onClick={() => {
-              setSelectedPlan(plan);
-              showMessage(`${plan.name} selected ✓`);
-            }}
-          >
-            Subscribe Now →
-          </button>
-        </article>
-      ))}
-    </section>
-
-    {/* SPECIAL DISCOUNTS */}
-
-    <section className="special-discounts">
-      <div className="discount-heading">
-        <small>SPECIAL GOFIT OFFERS</small>
-        <h3>Made For Your Routine</h3>
-      </div>
-
-      <div className="discount-grid">
-        <div className="discount-card student-discount">
-          <div className="discount-icon">🎓</div>
-
-          <div>
-            <strong>Student Discount</strong>
-
-            <p>
-              Extra <b>5% OFF</b> for students
-              with a valid student ID.
-            </p>
-          </div>
-
-          <span>STUDENT</span>
-        </div>
-
-        <div className="discount-card office-discount">
-          <div className="discount-icon">💼</div>
-
-          <div>
-            <strong>Office Plans</strong>
-
-            <p>
-              Special group pricing for
-              <b> 5+ office subscriptions.</b>
-            </p>
-          </div>
-
-          <span>OFFICE</span>
-        </div>
-      </div>
-    </section>
-
-    {/* WHY SUBSCRIBE */}
-
-    <section className="subscription-benefits">
-      <h3>Why Subscribe?</h3>
-
-      <div className="benefit-row">
-        <div>
-          <span>💰</span>
-          <strong>Save More</strong>
-          <small>Lower price per box</small>
-        </div>
-
-        <div>
-          <span>🥗</span>
-          <strong>Eat Better</strong>
-          <small>36g protein every box</small>
-        </div>
-
-        <div>
-          <span>📦</span>
-          <strong>Stay Consistent</strong>
-          <small>No daily ordering</small>
-        </div>
-      </div>
-    </section>
-
-    <div className="subscription-note">
-      🎁 Buy 10 paid GoFit boxes and unlock your
-      <strong> next Regular Box FREE.</strong>
-    </div>
-  </>
-)}
-
-{/* MENU */}
-
-          {page === "menu" && (
-            <>
-              <section className="menu-heading">
-                <div>
-                  <h2>GoFit Regular Box</h2>
-                  <p>Fresh. Simple. High Protein.</p>
-                </div>
-
-                <span className="protein-badge">
-                  {PRODUCT.protein}
-                </span>
-              </section>
-
-              <section className="product-card">
-                <div className="food-photo">
-                  <video
-                    src="/gofit-box.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                  />
-
-                  <span>HIGH PROTEIN</span>
-                </div>
-
-                <div className="product-info">
-                  <div className="product-top">
-                    <div>
-                      <small>GOFIT ORIGINAL</small>
-                      <h3>Regular Box</h3>
+                    <div className="timeline-dot">
+                      2
                     </div>
 
-                    <strong>₹89</strong>
+                    <div>
+
+                      <h4>
+                        First Products
+                      </h4>
+
+                      <p>
+                        Record the first GoFit boxes,
+                        products and original pricing.
+                      </p>
+
+                    </div>
+
                   </div>
 
-                  <div className="tags">
-                    <span>🥣 Protein Oats</span>
-                    <span>🌱 Sprouts</span>
-                    <span>🥜 Nuts</span>
-                    <span>🍌 Fruit</span>
+
+                  <div className="business-timeline-item">
+
+                    <div className="timeline-dot">
+                      3
+                    </div>
+
+                    <div>
+
+                      <h4>
+                        Business Growth
+                      </h4>
+
+                      <p>
+                        Add important sales, customer
+                        and product milestones.
+                      </p>
+
+                    </div>
+
                   </div>
-                  <button
-  className="add-button"
-  onClick={addToCart}
->
-  Add Regular Box
-  <span>+</span>
-                  </button>
-                  <section className="custom-card">
-
-  <div className="section-heading">
-
-    <div>
-      <h3>☷ GoFit Regular Box</h3>
-
-      <p>
-        Make your box your way
-      </p>
-    </div>
-
-    <span>
-      36g Protein
-    </span>
-
-  </div>
 
 
-  <label>
-    INCLUDED IN YOUR BOX
-  </label>
+                  <div className="business-timeline-item">
 
-  <div className="included-grid">
+                    <div className="timeline-dot">
+                      4
+                    </div>
 
-    <div className="included-item">
-      🥣 <span>Protein Oats</span>
-    </div>
+                    <div>
 
-    <div className="included-item">
-      🌱 <span>Sprouts</span>
-    </div>
+                      <h4>
+                        Today
+                      </h4>
 
-    <div className="included-item">
-      🥒 <span>Cucumber</span>
-    </div>
+                      <p>
+                        Track the current GoFit business
+                        performance from your records.
+                      </p>
 
-    <div className="included-item">
-      🥜 <span>Roasted Chana</span>
-    </div>
+                    </div>
 
-    <div className="included-item">
-      🥜 <span>Peanuts</span>
-    </div>
-
-    <div className="included-item">
-      🍎 <span>Fresh Fruits</span>
-    </div>
-
-    <div className="included-item">
-      🥜 <span>Peanut Butter</span>
-    </div>
-    <div className="included-item">
-    <span>🌰</span>
-    <span>Dry Fruits </span>
-</div>
-  </div>
-
-
-  <label>
-    OPTIONAL ADD-ONS
-  </label>
-
-  <div className="addon-row">
-
-    <button
-      className={
-        selectedAddons.includes("yogurt")
-          ? "addon selected-addon"
-          : "addon"
-      }
-
-      onClick={() =>
-        toggleAddon("yogurt")
-      }
-    >
-      <span>
-        🥛 Greek Yogurt
-      </span>
-
-      {selectedAddons.includes("yogurt") && (
-        <b>✓</b>
-      )}
-    </button>
-
-
-    <button
-      className={
-        selectedAddons.includes("chia")
-          ? "addon selected-addon"
-          : "addon"
-      }
-
-      onClick={() =>
-        toggleAddon("chia")
-      }
-    >
-      <span>
-        🌱 Flax / Chia
-      </span>
-
-      {selectedAddons.includes("chia") && (
-        <b>✓</b>
-      )}
-    </button>
-
-  </div>
-
-</section>
+                  </div>
 
                 </div>
+
               </section>
-            </>
-          )}
 
-          {/* CART */}
 
-          {page === "cart" && (
-            <>
-              <PageHeading
-                title="Your Meal Order"
-                subtitle="Review your GoFit box"
-                badge={`${quantity} Item${quantity > 1 ? "s" : ""}`}
-              />
+              {/* FINANCIAL OVERVIEW */}
 
-              <section className="cart-card">
-                <div className="cart-product">
-                  <div className="cart-product-info">
-                    <small>GOFIT ORIGINAL</small>
-                    <h3>GoFit Regular Box</h3>
-                    <p>Your regular GoFit protein box</p>
-                  </div>
+              <section className="business-section">
 
-                  <strong>₹{PRODUCT.price * quantity}</strong>
-                </div>
-
-                <div className="cart-quantity">
-                  <span>Quantity</span>
+                <div className="business-section-heading">
 
                   <div>
-                    <button onClick={decreaseQuantity}>−</button>
-                    <b>{quantity}</b>
-                    <button onClick={increaseQuantity}>+</button>
+                    <small>
+                      FINANCIAL OVERVIEW
+                    </small>
+
+                    <h3>
+                      Business Finance
+                    </h3>
                   </div>
+
+                  <span>
+                    💰
+                  </span>
+
                 </div>
 
-                {selectedAddons.length > 0 && (
-                  <div className="cart-addons">
-                    <small>ADD-ONS</small>
 
-                    {selectedAddons.map((addon) => (
-                      <div className="cart-addon" key={addon}>
-                        <span>{ADDONS[addon].name}</span>
-                        <strong>₹{ADDONS[addon].price}</strong>
-                      </div>
-                    ))}
+                <div className="finance-grid">
+
+                  <div className="finance-card">
+
+                    <span>
+                      💼
+                    </span>
+
+                    <strong>
+                      ₹—
+                    </strong>
+
+                    <small>
+                      Total Investment
+                    </small>
+
                   </div>
-                )}
-
-<section className="form-card location-card">
-
-  <div className="location-header">
-
-    <div className="location-icon">
-      📍
-    </div>
-
-    <div>
-      <h3>Delivery Location</h3>
-      <p>Choose where you want your GoFit box</p>
-    </div>
-
-  </div>
 
 
-  <div className="location-options">
+                  <div className="finance-card">
 
-    {/* LIVE LOCATION */}
+                    <span>
+                      💸
+                    </span>
 
-    <button
-      type="button"
-      className={
-        locationType === "live"
-          ? "location-option selected-location"
-          : "location-option"
-      }
-      onClick={() => {
+                    <strong>
+                      ₹—
+                    </strong>
 
-        if (!navigator.geolocation) {
-          showMessage("Location is not supported");
-          return;
-        }
+                    <small>
+                      Total Expenses
+                    </small>
 
-        showMessage("Getting your location...");
-
-        navigator.geolocation.getCurrentPosition(
-
-          (position) => {
-
-            const lat =
-              position.coords.latitude;
-
-            const lng =
-              position.coords.longitude;
-
-            setLocationType("live");
-
-            setLocation(
-              `Live Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`
-            );
-
-            showMessage("Live location selected ✓");
-          },
-
-          () => {
-            showMessage(
-              "Please allow location access"
-            );
-          },
-
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-
-        );
-
-      }}
-    >
-
-      <span>📍</span>
-
-      <div>
-        <strong>Live Location</strong>
-        <small>Use my current location</small>
-      </div>
-
-      {locationType === "live" && (
-        <b>✓</b>
-      )}
-
-    </button>
-
-
-    {/* ADD YOUR LOCATION */}
-
-    <button
-      type="button"
-      className={
-        locationType === "add"
-          ? "location-option selected-location"
-          : "location-option"
-      }
-     onClick={() => openLocationModal("add")}
-    >
-
-      <span>🗺️</span>
-
-      <div>
-        <strong>Add Your Location</strong>
-        <small>Enter your delivery address</small>
-      </div>
-
-      {locationType === "add" && (
-        <b>✓</b>
-      )}
-
-    </button>
-
-
-    {/* OTHER */}
-
-    <button
-      type="button"
-      className={
-        locationType === "other"
-          ? "location-option selected-location"
-          : "location-option"
-      }
-onClick={() => openLocationModal("other")}
-    >
-
-      <span>📌</span>
-
-      <div>
-        <strong>Other</strong>
-        <small>Enter another delivery point</small>
-      </div>
-
-      {locationType === "other" && (
-        <b>✓</b>
-      )}
-
-    </button>
-
-  </div>
-
-</section>
-
-                <section className="form-card">
-                  <FormTitle
-                    icon="👤"
-                    title="CUSTOMER DETAILS"
-                    subtitle="Used for your order"
-                  />
-
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                  />
-
-                  <input
-                    value={phone}
-                    onChange={(e) =>
-                      setPhone(
-                        e.target.value.replace(/\D/g, "").slice(0, 10)
-                      )
-                    }
-                    placeholder="10-digit phone number"
-                    type="tel"
-                  />
-                </section>
-
-                <section className="bill">
-                  <BillRow
-                    title="Regular Box"
-                    value={`₹${PRODUCT.price * quantity}`}
-                  />
-
-                  {selectedAddons.length > 0 && (
-                    <>
-                      {selectedAddons.map((addon) => (
-                        <BillRow
-                          key={addon}
-                          title={ADDONS[addon].name}
-                          value={`₹${ADDONS[addon].price}`}
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  <BillRow title="Packaging & Eco-Box" value="₹10" />
-                  <BillRow title="Delivery" value="FREE" green />
-
-                  <div className="line"></div>
-
-                  <div className="total">
-                    <span>To Pay</span>
-                    <strong>₹{total}</strong>
                   </div>
-                </section>
 
-                <button
-                  type="button"
-                  className="confirm"
-                  onClick={() => setPaymentModal(true)}
-                >
-                  ➤ &nbsp; Confirm & Send Order to Kitchen
-                </button>
+
+                  <div className="finance-card">
+
+                    <span>
+                      💵
+                    </span>
+
+                    <strong>
+                      ₹—
+                    </strong>
+
+                    <small>
+                      Total Revenue
+                    </small>
+
+                  </div>
+
+
+                  <div className="finance-card">
+
+                    <span>
+                      📈
+                    </span>
+
+                    <strong>
+                      ₹—
+                    </strong>
+
+                    <small>
+                      Net Profit
+                    </small>
+
+                  </div>
+
+                </div>
+
+
+                <div className="excel-notice">
+
+                  <span>
+                    📊
+                  </span>
+
+                  <div>
+
+                    <strong>
+                      Financial data
+                    </strong>
+
+                    <p>
+                      Upload your GoFit Excel workbook
+                      to connect investment, expenses,
+                      revenue and profit automatically.
+                    </p>
+
+                  </div>
+
+                </div>
+
               </section>
-            </>
-          )}
 
-          {/* TRACK */}
 
-          {page === "track" && (
-            <>
-              <PageHeading
-                title="Active Order Tracker"
-                subtitle="Follow your GoFit meal"
-                badge={order ? order.status : "No Active Order"}
-              />
+              {/* BUSINESS ANALYTICS */}
 
-              {!order ? (
-                <section className="empty-order">
-                  <div className="empty-icon">🍴</div>
+              <section className="business-section">
 
-                  <h3>No Active Meals Pending</h3>
+                <div className="business-section-heading">
 
-                  <p>
-                    Order a fresh GoFit protein box to see real-time updates here!
-                  </p>
+                  <div>
+                    <small>
+                      ANALYTICS
+                    </small>
 
-                  <button onClick={() => setPage("menu")}>Order Now</button>
-                </section>
-              ) : (
-                <>
-                  <section className="active-order">
+                    <h3>
+                      Business Performance
+                    </h3>
+                  </div>
+
+                  <span>
+                    📈
+                  </span>
+
+                </div>
+
+
+                <div className="analytics-list">
+
+                  <div className="analytics-row">
+
                     <div>
-                      <small>CURRENT ORDER</small>
-                      <h3>GoFit Regular Box</h3>
+                      <span>📦</span>
+
+                      <div>
+                        <strong>
+                          Boxes Sold
+                        </strong>
+
+                        <small>
+                          Total quantity from orders
+                        </small>
+                      </div>
                     </div>
 
-                    <strong>₹{order.total_amount}</strong>
-                  </section>
+                    <strong>
+                      {adminOrders.reduce(
+                        (total, order) =>
+                          total +
+                          Number(order.quantity || 0),
+                        0
+                      )}
+                    </strong>
 
-                  <div className="order-location">
-                    📍 {order.pickup_location}
-                    <br />
-                    ⏱ {order.pickup_slot}
                   </div>
 
-                  <section className="timeline">
-                    <Step
-                      title="Order Received"
-                      text="Your order has been received"
-                      active
-                    />
 
-                    <Step
-                      title="Preparing"
-                      text="GoFit kitchen is preparing your meal"
-                      active={
-                        order.status === "preparing" ||
-                        order.status === "ready" ||
-                        order.status === "completed"
-                      }
-                    />
+                  <div className="analytics-row">
 
-                    <Step
-                      title="Ready for Pickup"
-                      text="Your meal is ready"
-                      active={
-                        order.status === "ready" ||
-                        order.status === "completed"
-                      }
-                    />
+                    <div>
+                      <span>🧾</span>
 
-                    <Step
-                      title="Completed"
-                      text="Enjoy your GoFit meal!"
-                      active={order.status === "completed"}
-                    />
+                      <div>
+                        <strong>
+                          Orders
+                        </strong>
+
+                        <small>
+                          Total customer orders
+                        </small>
+                      </div>
+                    </div>
+
+                    <strong>
+                      {adminOrders.length}
+                    </strong>
+
+                  </div>
+
+
+                  <div className="analytics-row">
+
+                    <div>
+                      <span>💰</span>
+
+                      <div>
+                        <strong>
+                          Order Revenue
+                        </strong>
+
+                        <small>
+                          Revenue from recorded orders
+                        </small>
+                      </div>
+                    </div>
+
+                    <strong>
+                      ₹
+                      {adminOrders.reduce(
+                        (total, order) =>
+                          total +
+                          Number(
+                            order.total_amount || 0
+                          ),
+                        0
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+              </section>
+
+
+              {/* EXCEL */}
+
+              <section className="excel-upload-card">
+
+                <div className="excel-icon">
+                  📊
+                </div>
+
+                <div>
+
+                  <small>
+                    BUSINESS RECORDS
+                  </small>
+
+                  <h3>
+                    Connect Your Excel Data
+                  </h3>
+
+                  <p>
+                    Your investment, spending, revenue,
+                    profit and other business records
+                    will be connected here.
+                  </p>
+
+                </div>
+
+              </section>
+
+            </section>
+
+)}
+              {/* ==========================================
+    ADMIN DASHBOARD
+========================================== */}
+
+              {page === "admin" && user?.role === "admin" && (
+                <section className="admin-dashboard">
+
+                  {/* HEADER */}
+
+                  <div className="admin-dashboard-header">
+
+                    <div>
+                      <small>
+                        GOFIT ADMIN
+                      </small>
+
+                      <h2>
+                        Order Dashboard
+                      </h2>
+
+                      <p>
+                        Manage all GoFit orders
+                      </p>
+                    </div>
+
+                    <div className="admin-shield">
+                      🛡️
+                    </div>
+
+                  </div>
+
+
+                  {/* NOTIFICATION */}
+
+                  <div className="admin-notification-card">
+
+                    <div className="notification-icon">
+                      🔔
+                    </div>
+
+                    <div>
+                      <strong>
+                        New Order Alerts
+                      </strong>
+
+                      <p>
+                        {adminNotificationCount > 0
+                          ? `${adminNotificationCount} new order${adminNotificationCount > 1
+                            ? "s"
+                            : ""
+                          }`
+                          : "No new orders"}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={enableAdminNotifications}
+                    >
+                      Enable
+                    </button>
+
+                  </div>
+
+
+                  {/* STATISTICS */}
+
+                  <div className="admin-stats">
+
+                    <div className="admin-stat-card">
+
+                      <span>
+                        📦
+                      </span>
+
+                      <strong>
+                        {adminOrders.length}
+                      </strong>
+
+                      <small>
+                        Total Orders
+                      </small>
+
+                    </div>
+
+
+                    <div className="admin-stat-card">
+
+                      <span>
+                        🥗
+                      </span>
+
+                      <strong>
+                        {adminOrders.reduce(
+                          (total, order) =>
+                            total +
+                            Number(order.quantity || 0),
+                          0
+                        )}
+                      </strong>
+
+                      <small>
+                        Boxes Sold
+                      </small>
+
+                    </div>
+
+
+                    <div className="admin-stat-card">
+
+                      <span>
+                        ₹
+                      </span>
+
+                      <strong>
+                        ₹
+                        {adminOrders.reduce(
+                          (total, order) =>
+                            total +
+                            Number(
+                              order.total_amount || 0
+                            ),
+                          0
+                        )}
+                      </strong>
+
+                      <small>
+                        Revenue
+                      </small>
+
+                    </div>
+
+                  </div>
+
+
+                  {/* ORDER HISTORY */}
+
+                  <div className="admin-orders-section">
+
+                    <div className="admin-section-title">
+
+                      <div>
+                        <small>
+                          LIVE ORDERS
+                        </small>
+
+                        <h3>
+                          Order History
+                        </h3>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => loadAdminOrders()}
+                      >
+                        ↻
+                      </button>
+
+                    </div>
+
+
+                    {adminLoading ? (
+
+                      <div className="admin-empty">
+                        <div className="admin-loading">
+                          ⟳
+                        </div>
+
+                        <p>
+                          Loading orders...
+                        </p>
+                      </div>
+
+                    ) : adminOrders.length === 0 ? (
+
+                      <div className="admin-empty">
+
+                        <div>
+                          📦
+                        </div>
+
+                        <h3>
+                          No Orders Yet
+                        </h3>
+
+                        <p>
+                          New GoFit orders will appear here.
+                        </p>
+
+                      </div>
+
+                    ) : (
+
+                      <div className="admin-order-list">
+
+                        {[...adminOrders]
+                          .reverse()
+                          .map((order, index) => (
+
+                            <article
+                              className="admin-order-card"
+                              key={
+                                order.id ||
+                                order.order_id ||
+                                index
+                              }
+                            >
+
+                              {/* ORDER TOP */}
+
+                              <div className="admin-order-top">
+
+                                <div>
+
+                                  <small>
+                                    ORDER #
+                                    {order.id ||
+                                      order.order_id ||
+                                      index + 1}
+                                  </small>
+
+                                  <h3>
+                                    {order.customer_name ||
+                                      "Customer"}
+                                  </h3>
+
+                                </div>
+
+                                <strong>
+                                  ₹
+                                  {Number(
+                                    order.total_amount || 0
+                                  )}
+                                </strong>
+
+                              </div>
+
+
+                              {/* CUSTOMER */}
+
+                              <div className="admin-order-info">
+
+                                <div>
+                                  <span>
+                                    📱
+                                  </span>
+
+                                  <p>
+                                    {order.phone ||
+                                      "No phone"}
+                                  </p>
+                                </div>
+
+
+                                <div>
+                                  <span>
+                                    📦
+                                  </span>
+
+                                  <p>
+                                    {order.quantity || 0} Box
+                                    {(Number(
+                                      order.quantity || 0
+                                    ) !== 1)
+                                      ? "es"
+                                      : ""}
+                                  </p>
+                                </div>
+
+
+                                <div>
+                                  <span>
+                                    📍
+                                  </span>
+
+                                  <p>
+                                    {order.pickup_location ||
+                                      "Location not provided"}
+                                  </p>
+                                </div>
+
+
+                                <div>
+                                  <span>
+                                    💳
+                                  </span>
+
+                                  <p>
+                                    {order.payment_method ||
+                                      "COD"}
+                                  </p>
+                                </div>
+
+                              </div>
+
+
+                              {/* ADDONS */}
+
+                              {Array.isArray(
+                                order.addons
+                              ) &&
+                                order.addons.length > 0 && (
+
+                                  <div className="admin-addons">
+
+                                    <small>
+                                      ADD-ONS
+                                    </small>
+
+                                    <p>
+                                      {order.addons
+                                        .map(
+                                          (addon) =>
+                                            addon.name
+                                        )
+                                        .join(", ")}
+                                    </p>
+
+                                  </div>
+
+                                )}
+
+
+                              {/* STATUS */}
+
+                              <div className="admin-order-bottom">
+                                <div className="admin-order-actions">
+
+                                  <button
+                                    onClick={() =>
+                                      updateOrderStatus(
+                                        order.id,
+                                        "confirmed"
+                                      )
+                                    }
+                                  >
+                                    ✓ Confirm
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      updateOrderStatus(
+                                        order.id,
+                                        "preparing"
+                                      )
+                                    }
+                                  >
+                                    👨‍🍳 Preparing
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      updateOrderStatus(
+                                        order.id,
+                                        "ready"
+                                      )
+                                    }
+                                  >
+                                    🍱 Ready
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      updateOrderStatus(
+                                        order.id,
+                                        "out_for_delivery"
+                                      )
+                                    }
+                                  >
+                                    🚚 Delivery
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      updateOrderStatus(
+                                        order.id,
+                                        "completed"
+                                      )
+                                    }
+                                  >
+                                    ✓ Completed
+                                  </button>
+
+                                  <button
+                                    className="reject-order"
+                                    onClick={() =>
+                                      rejectOrder(order.id)
+                                    }
+                                  >
+                                    ✕ Reject
+                                  </button>
+
+                                  <button
+                                    className="cancel-order"
+                                    onClick={() =>
+                                      cancelOrder(order.id)
+                                    }
+                                  >
+                                    🗑 Cancel
+                                  </button>
+
+                                </div>
+                                <span
+                                  className={`order-status ${order.status ||
+                                    order.order_status ||
+                                    "new"
+                                    }`}
+                                >
+                                  {String(
+                                    order.status ||
+                                    order.order_status ||
+                                    "new"
+                                  ).toUpperCase()}
+                                </span>
+
+                                <small>
+                                  {order.created_at
+                                    ? new Date(
+                                      order.created_at
+                                    ).toLocaleString()
+                                    : "Recent order"}
+                                </small>
+
+                              </div>
+
+                            </article>
+
+                          ))}
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                </section>
+
+              )}
+
+              {/* SUBSCRIPTIONS */}
+
+              {page === "subscriptions" && (
+                <>
+                  <section className="subscription-hero">
+                    <div>
+                      <span className="subscription-kicker">
+                        GOFIT MEMBERSHIP
+                      </span>
+
+                      <h2>
+                        Eat Protein.<br />
+                        <span>Save More.</span>
+                      </h2>
+
+                      <p>
+                        Subscribe to GoFit Regular Boxes and make
+                        your daily protein routine easier and cheaper.
+                      </p>
+                    </div>
+
+                    <div className="subscription-hero-icon">
+                      🥗
+                    </div>
+                  </section>
+
+                  <div className="subscription-offer">
+                    <div className="offer-icon">🎁</div>
+
+                    <div>
+                      <strong>Subscription Perks</strong>
+                      <p>
+                        Save on every box + FREE delivery
+                      </p>
+                    </div>
+                  </div>
+
+                  <section className="subscription-plans">
+                    <div className="subscription-section-title">
+                      <div>
+                        <small>CHOOSE YOUR PLAN</small>
+                        <h3>Build Your Routine</h3>
+                      </div>
+
+                      <span>36g Protein / Box</span>
+                    </div>
+
+                    {SUBSCRIPTION_PLANS.map((plan) => (
+                      <article
+                        key={plan.id}
+                        className={`subscription-card ${plan.popular ? "subscription-popular" : ""
+                          }`}
+                      >
+                        {plan.popular && (
+                          <div className="popular-ribbon">
+                            MOST POPULAR
+                          </div>
+                        )}
+
+                        <div className="subscription-card-top">
+                          <div className="subscription-plan-icon">
+                            {plan.icon}
+                          </div>
+
+                          <div>
+                            <small>{plan.tag}</small>
+
+                            <h3>{plan.name}</h3>
+
+                            <p>{plan.duration}</p>
+                          </div>
+                        </div>
+
+                        <p className="subscription-description">
+                          {plan.description}
+                        </p>
+
+                        <div className="subscription-price">
+                          <div>
+                            <span className="old-price">₹{plan.oldPrice}</span>
+                            <strong>₹{plan.price}</strong>
+                          </div>
+
+                          <span className="save-badge">SAVE ₹{plan.save}</span>
+                        </div>
+
+                        <div className="per-box">{plan.perBox}</div>
+
+                        <div className="subscription-features">
+                          <span>✓ 36g protein every box</span>
+                          <span>✓ Free delivery</span>
+                          <span>✓ Flexible delivery location</span>
+                          <span>✓ Add-ons available</span>
+                        </div>
+
+
+                        <button
+                          type="button"
+                          className="subscribe-button"
+                          onClick={() => openGoFitWhatsApp(plan.name)}
+                        >
+                          Subscribe Now →
+                        </button>
+                      </article>
+                    ))}
+                  </section>
+
+                  {/* SPECIAL DISCOUNTS */}
+
+                  <section className="special-discounts">
+                    <div className="discount-heading">
+                      <small>SPECIAL GOFIT OFFERS</small>
+                      <h3>Made For Your Routine</h3>
+                    </div>
+
+                    <div className="discount-grid">
+                      <div className="discount-card student-discount">
+                        <div className="discount-icon">🎓</div>
+
+                        <div>
+                          <strong>Student Discount</strong>
+
+                          <p>
+                            Extra <b>5% OFF</b> for students
+                            with a valid student ID.
+                          </p>
+                        </div>
+
+                        <span>STUDENT</span>
+                      </div>
+
+                      <div className="discount-card office-discount">
+                        <div className="discount-icon">💼</div>
+
+                        <div>
+                          <strong>Office Plans</strong>
+
+                          <p>
+                            Special group pricing for
+                            <b> 5+ office subscriptions.</b>
+                          </p>
+                        </div>
+
+                        <span>OFFICE</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* WHY SUBSCRIBE */}
+
+                  <section className="subscription-benefits">
+                    <h3>Why Subscribe?</h3>
+
+                    <div className="benefit-row">
+                      <div>
+                        <span>💰</span>
+                        <strong>Save More</strong>
+                        <small>Lower price per box</small>
+                      </div>
+
+                      <div>
+                        <span>🥗</span>
+                        <strong>Eat Better</strong>
+                        <small>36g protein every box</small>
+                      </div>
+
+                      <div>
+                        <span>📦</span>
+                        <strong>Stay Consistent</strong>
+                        <small>No daily ordering</small>
+                      </div>
+                    </div>
+                  </section>
+
+                  <div className="subscription-note">
+                    🎁 Buy 10 paid GoFit boxes and unlock your
+                    <strong> next Regular Box FREE.</strong>
+                  </div>
+                </>
+              )}
+
+              {/* MENU */}
+
+              {page === "menu" && (
+                <>
+                  <section className="menu-heading">
+                    <div>
+                      <h2>GoFit Regular Box</h2>
+                      <p>Fresh. Simple. High Protein.</p>
+                    </div>
+
+                    <span className="protein-badge">
+                      {PRODUCT.protein}
+                    </span>
+                  </section>
+
+                  <section className="product-card">
+                    <div className="food-photo">
+                      <video
+                        src="/gofit-box.mp4"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="auto"
+                      />
+
+                      <span>HIGH PROTEIN</span>
+                    </div>
+
+                    <div className="product-info">
+                      <div className="product-top">
+                        <div>
+                          <small>GOFIT ORIGINAL</small>
+                          <h3>Regular Box</h3>
+                        </div>
+
+                        <strong>₹89</strong>
+                      </div>
+
+                      <div className="tags">
+                        <span>🥣 Protein Oats</span>
+                        <span>🌱 Sprouts</span>
+                        <span>🥜 Nuts</span>
+                        <span>🍌 Fruit</span>
+                      </div>
+                      <button
+                        className="add-button"
+                        onClick={addToCart}
+                      >
+                        Add Regular Box
+                        <span>+</span>
+                      </button>
+                      <section className="custom-card">
+
+                        <div className="section-heading">
+
+                          <div>
+                            <h3>☷ GoFit Regular Box</h3>
+
+                            <p>
+                              Make your box your way
+                            </p>
+                          </div>
+
+                          <span>
+                            36g Protein
+                          </span>
+
+                        </div>
+
+
+                        <label>
+                          INCLUDED IN YOUR BOX
+                        </label>
+
+                        <div className="included-grid">
+
+                          <div className="included-item">
+                            🥣 <span>Protein Oats</span>
+                          </div>
+
+                          <div className="included-item">
+                            🌱 <span>Sprouts</span>
+                          </div>
+
+                          <div className="included-item">
+                            🥒 <span>Cucumber</span>
+                          </div>
+
+                          <div className="included-item">
+                            🥜 <span>Roasted Chana</span>
+                          </div>
+
+                          <div className="included-item">
+                            🥜 <span>Peanuts</span>
+                          </div>
+
+                          <div className="included-item">
+                            🍎 <span>Fresh Fruits</span>
+                          </div>
+
+                          <div className="included-item">
+                            🥜 <span>Peanut Butter</span>
+                          </div>
+                          <div className="included-item">
+                            <span>🌰</span>
+                            <span>Dry Fruits </span>
+                          </div>
+                        </div>
+
+
+                        <label>
+                          OPTIONAL ADD-ONS
+                        </label>
+
+                        <div className="addon-row">
+
+                          <button
+                            className={
+                              selectedAddons.includes("yogurt")
+                                ? "addon selected-addon"
+                                : "addon"
+                            }
+
+                            onClick={() =>
+                              toggleAddon("yogurt")
+                            }
+                          >
+                            <span>
+                              🥛 Greek Yogurt
+                            </span>
+
+                            {selectedAddons.includes("yogurt") && (
+                              <b>✓</b>
+                            )}
+                          </button>
+
+
+                          <button
+                            className={
+                              selectedAddons.includes("chia")
+                                ? "addon selected-addon"
+                                : "addon"
+                            }
+
+                            onClick={() =>
+                              toggleAddon("chia")
+                            }
+                          >
+                            <span>
+                              🌱 Flax / Chia
+                            </span>
+
+                            {selectedAddons.includes("chia") && (
+                              <b>✓</b>
+                            )}
+                          </button>
+
+                        </div>
+
+                      </section>
+
+                    </div>
                   </section>
                 </>
               )}
-            </>
-          )}
-        </main>
 
+              {/* CART */}
+
+              {page === "cart" && (
+                <>
+                  <PageHeading
+                    title="Your Meal Order"
+                    subtitle="Review your GoFit box"
+                    badge={`${quantity} Item${quantity > 1 ? "s" : ""}`}
+                  />
+
+                  <section className="cart-card">
+                    <div className="cart-product">
+                      <div className="cart-product-info">
+                        <small>GOFIT ORIGINAL</small>
+                        <h3>GoFit Regular Box</h3>
+                        <p>Your regular GoFit protein box</p>
+                      </div>
+
+                      <strong>₹{PRODUCT.price * quantity}</strong>
+                    </div>
+
+                    <div className="cart-quantity">
+                      <span>Quantity</span>
+
+                      <div>
+                        <button onClick={decreaseQuantity}>−</button>
+                        <b>{quantity}</b>
+                        <button onClick={increaseQuantity}>+</button>
+                      </div>
+                    </div>
+
+                    {selectedAddons.length > 0 && (
+                      <div className="cart-addons">
+                        <small>ADD-ONS</small>
+
+                        {selectedAddons.map((addon) => (
+                          <div className="cart-addon" key={addon}>
+                            <span>{ADDONS[addon].name}</span>
+                            <strong>₹{ADDONS[addon].price}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <section className="form-card location-card">
+
+                      <div className="location-header">
+
+                        <div className="location-icon">
+                          📍
+                        </div>
+
+                        <div>
+                          <h3>Delivery Location</h3>
+                          <p>Choose where you want your GoFit box</p>
+                        </div>
+
+                      </div>
+
+
+                      <div className="location-options">
+
+                        {/* LIVE LOCATION */}
+
+                        <button
+                          type="button"
+                          className={
+                            locationType === "live"
+                              ? "location-option selected-location"
+                              : "location-option"
+                          }
+                          onClick={() => {
+
+                            if (!navigator.geolocation) {
+                              showMessage("Location is not supported");
+                              return;
+                            }
+
+                            showMessage("Getting your location...");
+
+                            navigator.geolocation.getCurrentPosition(
+
+                              (position) => {
+
+                                const lat =
+                                  position.coords.latitude;
+
+                                const lng =
+                                  position.coords.longitude;
+
+                                setLocationType("live");
+
+                                setLocation(
+                                  `Live Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`
+                                );
+
+                                showMessage("Live location selected ✓");
+                              },
+
+                              () => {
+                                showMessage(
+                                  "Please allow location access"
+                                );
+                              },
+
+                              {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 0
+                              }
+
+                            );
+
+                          }}
+                        >
+
+                          <span>📍</span>
+
+                          <div>
+                            <strong>Live Location</strong>
+                            <small>Use my current location</small>
+                          </div>
+
+                          {locationType === "live" && (
+                            <b>✓</b>
+                          )}
+
+                        </button>
+
+
+                        {/* ADD YOUR LOCATION */}
+
+                        <button
+                          type="button"
+                          className={
+                            locationType === "add"
+                              ? "location-option selected-location"
+                              : "location-option"
+                          }
+                          onClick={() => openLocationModal("add")}
+                        >
+
+                          <span>🗺️</span>
+
+                          <div>
+                            <strong>Add Your Location</strong>
+                            <small>Enter your delivery address</small>
+                          </div>
+
+                          {locationType === "add" && (
+                            <b>✓</b>
+                          )}
+
+                        </button>
+
+
+                        {/* OTHER */}
+
+                        <button
+                          type="button"
+                          className={
+                            locationType === "other"
+                              ? "location-option selected-location"
+                              : "location-option"
+                          }
+                          onClick={() => openLocationModal("other")}
+                        >
+
+                          <span>📌</span>
+
+                          <div>
+                            <strong>Other</strong>
+                            <small>Enter another delivery point</small>
+                          </div>
+
+                          {locationType === "other" && (
+                            <b>✓</b>
+                          )}
+
+                        </button>
+
+                      </div>
+
+                    </section>
+
+                    <section className="form-card">
+                      <FormTitle
+                        icon="👤"
+                        title="CUSTOMER DETAILS"
+                        subtitle="Used for your order"
+                      />
+
+                      <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your name"
+                      />
+
+                      <input
+                        value={phone}
+                        onChange={(e) =>
+                          setPhone(
+                            e.target.value.replace(/\D/g, "").slice(0, 10)
+                          )
+                        }
+                        placeholder="10-digit phone number"
+                        type="tel"
+                      />
+                    </section>
+
+                    <section className="bill">
+                      <BillRow
+                        title="Regular Box"
+                        value={`₹${PRODUCT.price * quantity}`}
+                      />
+
+                      {selectedAddons.length > 0 && (
+                        <>
+                          {selectedAddons.map((addon) => (
+                            <BillRow
+                              key={addon}
+                              title={ADDONS[addon].name}
+                              value={`₹${ADDONS[addon].price}`}
+                            />
+                          ))}
+                        </>
+                      )}
+
+                      <BillRow title="Packaging & Eco-Box" value="₹10" />
+                      <BillRow title="Delivery" value="FREE" green />
+
+                      <div className="line"></div>
+
+                      <div className="total">
+                        <span>To Pay</span>
+                        <strong>₹{total}</strong>
+                      </div>
+                    </section>
+
+                    <button
+                      type="button"
+                      className="confirm"
+                      onClick={() => setPaymentModal(true)}
+                    >
+                      ➤ &nbsp; Confirm & Send Order to Kitchen
+                    </button>
+                  </section>
+                </>
+              )}
+
+              {/* TRACK */}
+
+              {page === "track" && (
+                <>
+                  <PageHeading
+                    title="Active Order Tracker"
+                    subtitle="Follow your GoFit meal"
+                    badge={order ? order.status : "No Active Order"}
+                  />
+
+                  {!order ? (
+                    <section className="empty-order">
+                      <div className="empty-icon">🍴</div>
+
+                      <h3>No Active Meals Pending</h3>
+
+                      <p>
+                        Order a fresh GoFit protein box to see real-time updates here!
+                      </p>
+
+                      <button onClick={() => setPage("menu")}>Order Now</button>
+                    </section>
+                  ) : (
+                    <>
+                      <section className="active-order">
+                        <div>
+                          <small>CURRENT ORDER</small>
+                          <h3>GoFit Regular Box</h3>
+                        </div>
+
+                        <strong>₹{order.total_amount}</strong>
+                      </section>
+
+                      <div className="order-location">
+                        📍 {order.pickup_location}
+                        <br />
+                        ⏱ {order.pickup_slot}
+                      </div>
+
+                      <section className="timeline">
+                        <Step
+                          title="Order Received"
+                          text="Your order has been received"
+                          active
+                        />
+
+                        <Step
+                          title="Preparing"
+                          text="GoFit kitchen is preparing your meal"
+                          active={
+                            order.status === "preparing" ||
+                            order.status === "ready" ||
+                            order.status === "completed"
+                          }
+                        />
+
+                        <Step
+                          title="Ready for Pickup"
+                          text="Your meal is ready"
+                          active={
+                            order.status === "ready" ||
+                            order.status === "completed"
+                          }
+                        />
+
+                        <Step
+                          title="Completed"
+                          text="Enjoy your GoFit meal!"
+                          active={order.status === "completed"}
+                        />
+                      </section>
+                    </>
+                  )}
+                </>
+              )}
+            </main>
 
         {/* NAVIGATION */}
         {paymentModal && (
@@ -4066,47 +4065,45 @@ onClick={() => openLocationModal("other")}
 
   </div>
 )}
-<nav className="bottom-nav">
+  <nav className="bottom-nav">
+    <NavButton
+      icon="🍴"
+      label="Menu"
+      active={page === "menu"}
+      onClick={() => setPage("menu")}
+    />
 
-  <NavButton
-    icon="🍴"
-    label="Menu"
-    active={page === "menu"}
-    onClick={() => setPage("menu")}
-  />
+    <NavButton
+      icon="🛒"
+      label="Cart"
+      active={page === "cart"}
+      onClick={() => setPage("cart")}
+    />
 
-  <NavButton
-    icon="🛒"
-    label="Cart"
-    active={page === "cart"}
-    onClick={() => setPage("cart")}
-  />
+    <NavButton
+      icon="🎟️"
+      label="Subscribe"
+      active={page === "subscriptions"}
+      onClick={() => setPage("subscriptions")}
+    />
 
-  <NavButton
-    icon="🎟️"
-    label="Subscribe"
-    active={page === "subscriptions"}
-    onClick={() => setPage("subscriptions")}
-  />
+    <NavButton
+      icon="↻"
+      label="Track"
+      active={page === "track"}
+      onClick={() => setPage("track")}
+    />
 
-  <NavButton
-    icon="↻"
-    label="Track"
-    active={page === "track"}
-    onClick={() => setPage("track")}
-  />
-
-<NavButton
-  icon={user?.role === "admin" ? "🛡️" : "👤"}
-  label="Profile"
-  active={page === "profile"}
-  onClick={() => setPage("profile")}
-/>
-
-</nav>
-  </div>
+    <NavButton
+      icon={user?.role === "admin" ? "🛡️" : "👤"}
+      label="Profile"
+      active={page === "profile"}
+      onClick={() => setPage("profile")}
+    />
+  </nav>
 </div>
-  );
+</div>
+);
 }
 
-export default App; 
+export default App;
