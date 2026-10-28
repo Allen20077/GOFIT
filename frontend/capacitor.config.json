@@ -1,1 +1,5 @@
-"webDir": "dist"
+{
+    "appId": "com.gofit.app",
+    "appName": "GoFit",
+    "webDir": "dist"
+}

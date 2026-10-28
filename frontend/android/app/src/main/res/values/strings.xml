@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GoFit</string>
+    <string name="title_activity_main">GoFit</string>
+    <string name="package_name">com.gofit.app</string>
+    <string name="custom_url_scheme">com.gofit.app</string>
+</resources>
