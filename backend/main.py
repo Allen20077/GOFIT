@@ -234,7 +234,6 @@ app = FastAPI(
     version="2.0.0"
 )
 
-
 # =========================================================
 # CORS
 # =========================================================
@@ -245,10 +244,6 @@ cors_origins = [
     'http://127.0.0.1:5173',
     'https://gofit-sepia.vercel.app'
 ]
-
-# If your frontend is deployed on Vercel, add its exact URL here.
-# Example:
-# "https://gofit-sepia.vercel.app"
 
 env_origins = os.getenv("CORS_ORIGINS", "")
 

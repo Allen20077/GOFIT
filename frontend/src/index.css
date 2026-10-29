@@ -4330,3 +4330,79 @@ SMALL REWARD CARD
   65% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.phone {
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.statusbar,
+.header {
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  padding-bottom: 24px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.bottom-nav {
+  flex-shrink: 0;
+  position: relative;
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-width: 430px) {
+  .phone {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+  }
+
+  .content {
+    padding: 12px;
+    padding-bottom: 20px;
+  }
+
+  .content img {
+    max-width: 100%;
+    height: auto;
+  }
+}

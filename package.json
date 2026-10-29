@@ -9,14 +9,14 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@capacitor/android": "^8.5.3",
-        "@capacitor/core": "^8.5.3",
+        "@capacitor/android": "^8.6.0",
+        "@capacitor/core": "^8.6.0",
         "@vitejs/plugin-react": "latest",
-        "vite": "latest",
         "react": "latest",
-        "react-dom": "latest"
+        "react-dom": "latest",
+        "vite": "latest"
     },
     "devDependencies": {
-        "@capacitor/cli": "^8.5.3"
+        "@capacitor/cli": "^8.6.0"
     }
 }
