@@ -3060,24 +3060,22 @@ const response = await fetch(
               : "Revenue amount (₹)"}
         </label>
 
-
-<input
-  id="manual-stat-value"
-  type="number"
-  min={activeStat === "revenue" ? "0.01" : "1"}
-  step={activeStat === "revenue" ? "0.01" : "1"}
-  value={manualStatValue}
-  onChange={(event) =>
-    setManualStatValue(event.target.value)
-  }
-  placeholder={
-    activeStat === "revenue"
-      ? "e.g. 500"
-      : "e.g. 10"
-  }
-  required
-/>
-
+        <input
+          id="manual-stat-value"
+          type="number"
+          min="0.01"
+          step={activeStat === "revenue" ? "0.01" : "1"}
+          value={manualStatValue}
+          onChange={(event) =>
+            setManualStatValue(event.target.value)
+          }
+          placeholder={
+            activeStat === "revenue"
+              ? "e.g. 500"
+              : "e.g. 10"
+          }
+          required
+        />
 
         <label htmlFor="manual-stat-note">
           Description <span>(optional)</span>
@@ -4541,7 +4539,18 @@ onClick={() => {
       active={page === "track"}
       onClick={() => setPage("track")}
     />
-
+<NavButton
+  icon="🥗"
+  label="Food"
+  active={false}
+  onClick={() =>
+    window.open(
+      "https://berry-food-tracker.vercel.app/",
+      "_blank",
+      "noopener,noreferrer"
+    )
+  }
+/>
     <NavButton
       icon={user?.role === "admin" ? "🛡️" : "👤"}
       label="Profile"

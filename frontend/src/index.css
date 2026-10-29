@@ -4694,3 +4694,197 @@ button.admin-stat-card {
   align-items: center !important;
   justify-content: center !important;
 }
+
+
+/* ===== GoFit Mobile Readability Improvements ===== */
+
+@media (max-width: 600px) {
+  /* Main product headings */
+  .product-card h2,
+  .product-card h3,
+  .menu-item h2,
+  .menu-item h3 {
+    font-size: 21px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* General product text */
+  .product-card p,
+  .menu-item p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Product prices */
+  .product-card .price,
+  .menu-item .price {
+    font-size: 23px !important;
+  }
+
+  /* Ingredients and add-on options */
+  .product-card button,
+  .menu-item button {
+    font-size: 14px !important;
+  }
+
+  /* General small labels */
+  .product-card small,
+  .menu-item small {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Bottom navigation */
+  nav button,
+  nav a {
+    font-size: 12px !important;
+  }
+
+  nav button span,
+  nav a span {
+    font-size: 12px !important;
+  }
+
+  /* Form fields */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Ingredient and add-on cards */
+  .ingredient-card,
+  .included-item,
+  .addon-card,
+  .add-on-card {
+    min-height: 58px;
+    padding: 14px 12px !important;
+  }
+
+  .ingredient-card,
+  .included-item,
+  .addon-card,
+  .add-on-card {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Product information spacing */
+  .product-card,
+  .menu-item {
+    line-height: 1.5;
+  }
+}
+
+/* ===== GoFit: Larger Mobile Product Text ===== */
+
+@media (max-width: 600px) {
+
+  /* Product name */
+  .product-card h2,
+  .product-card h3,
+  .menu-item h2,
+  .menu-item h3 {
+    font-size: 24px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Product price */
+  .product-card .price,
+  .menu-item .price {
+    font-size: 28px !important;
+    font-weight: 800 !important;
+  }
+
+  /* Ingredient names */
+  .ingredient-card,
+  .included-item,
+  .addon-card,
+  .add-on-card {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    min-height: 64px !important;
+    padding: 16px 14px !important;
+  }
+
+  /* Product buttons */
+  .product-card button,
+  .menu-item button {
+    font-size: 16px !important;
+    min-height: 48px;
+  }
+
+  /* Section headings */
+  .product-card h4,
+  .menu-item h4 {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Description text */
+  .product-card p,
+  .menu-item p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Small labels */
+  .product-card small,
+  .menu-item small {
+    font-size: 12px !important;
+  }
+}
+
+.bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 100%;
+}
+
+.nav-button {
+  min-width: 0;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+/* GoFit bottom navigation: six evenly spaced items */
+.bottom-nav {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  align-items: center;
+  justify-content: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 0 !important;
+}
+
+.bottom-nav .nav-button {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 8px 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.bottom-nav .nav-button span {
+  line-height: 1.2;
+}
+
+.bottom-nav .nav-button small {
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.bottom-nav .nav-button.active {
+  justify-self: stretch;
+}
