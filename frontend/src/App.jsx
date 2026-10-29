@@ -1354,9 +1354,6 @@ function validateCustomerDetails() {
   return true;
 }
 
-
-
-  
 async function placeCODOrder() {
   // Validate customer details before order confirmation
   const customerName = name.trim();
@@ -1371,6 +1368,8 @@ async function placeCODOrder() {
     showMessage("Please enter a valid 10-digit phone number!");
     return;
   }
+  // Open a WhatsApp tab while the button click is still active
+const whatsappTab = window.open("about:blank", "_blank");
 
   setPaymentProcessing(true);
 
@@ -1428,7 +1427,43 @@ async function placeCODOrder() {
             );
         }
 
-        setOrder(data.order || data);
+        const savedOrder = data.order || data;
+        setOrder(savedOrder);
+
+// GoFit WhatsApp number (country code + number)
+const gofitWhatsAppNumber = "918951056405";
+
+const addonsText = selectedAddons.length
+  ? selectedAddons
+      .map((addon) => ADDONS[addon].name)
+      .join(", ")
+  : "None";
+
+const whatsappMessage = [
+  "🔔 GOFIT - NEW ORDER",
+  "",
+  `Customer: ${customerName}`,
+  `Phone: ${customerPhone}`,
+  `Product: ${PRODUCT.name}`,
+  `Quantity: ${quantity}`,
+  `Add-ons: ${addonsText}`,
+  `Pickup Location: ${location}`,
+  `Pickup Slot: ${slot}`,
+  `Total: ₹${total}`,
+  "Payment: Cash on Delivery",
+  `Customer ID: ${savedOrder.customer_id ?? data.customer_id ?? "N/A"}`,
+  `Order ID: ${savedOrder.id ?? savedOrder.order_id ?? "N/A"}`
+].join("\n");
+
+const whatsappUrl =
+  `https://wa.me/${gofitWhatsAppNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+
+if (whatsappTab) {
+  whatsappTab.location.href = whatsappUrl;
+} else {
+  // Fallback if the browser blocked the new tab
+  window.location.href = whatsappUrl;
+}
 
         addLoyaltyBoxes(quantity);
 
@@ -1438,7 +1473,10 @@ setShowOrderSuccess(true);
 
     } catch (error) {
 
-        console.error(error);
+    console.error(error);
+    if (whatsappTab && !whatsappTab.closed) {
+  whatsappTab.close();
+}
 
         setPaymentProcessing(false);
 
