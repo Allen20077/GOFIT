@@ -4406,3 +4406,37 @@ body {
     height: auto;
   }
 }
+
+.location-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  background: #101c2e;
+  border: 1px solid #35516f;
+  border-radius: 10px;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.location-preview > span {
+  font-size: 16px;
+}
+
+.location-preview div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.location-preview strong {
+  font-size: 12px;
+}
+
+.location-preview small {
+  color: #a9bdd5;
+  font-size: 11px;
+  line-height: 1.5;
+}

@@ -239,9 +239,15 @@ const [customerStatsLoading, setCustomerStatsLoading] = useState(false);
 const [showLoyalty, setShowLoyalty] = useState(false);
 
 const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-const [location, setLocation] = useState("");
-const [locationType, setLocationType] = useState("");
+const [phone, setPhone] = useState("");
+const [showCustomerErrors, setShowCustomerErrors] = useState(false);
+const [location, setLocation] = useState(
+  () => localStorage.getItem("gofit_delivery_location") || ""
+);
+
+const [locationType, setLocationType] = useState(
+  () => localStorage.getItem("gofit_location_type") || ""
+);
 
 const [locationModal, setLocationModal] = useState(false);
 const [locationInput, setLocationInput] = useState("");
@@ -283,23 +289,47 @@ const total =
     return [...current, addon];
   });
   }
-  function openLocationModal(type) {
+
+function openLocationModal(type) {
   setLocationType(type);
-  setLocationInput("");
+
+  // Reopen the saved address when editing it.
+  setLocationInput(
+    type === locationType &&
+    (type === "add" || type === "other")
+      ? location
+      : ""
+  );
+
   setLocationModal(true);
 }
 
+
+
 function saveLocation() {
-  if (!locationInput.trim()) {
+  const savedAddress = locationInput.trim();
+
+  if (!savedAddress) {
     showMessage("Please enter your location");
     return;
   }
 
-  setLocation(locationInput.trim());
-  setLocationModal(false);
+  setLocation(savedAddress);
 
-  showMessage("Location added ✓");
-} 
+  localStorage.setItem(
+    "gofit_delivery_location",
+    savedAddress
+  );
+
+  localStorage.setItem(
+    "gofit_location_type",
+    locationType
+  );
+
+  setLocationModal(false);
+  showMessage("Location saved successfully ✓");
+}
+
 
 // ================================
 // LOGIN
@@ -440,7 +470,7 @@ async function loadCustomerStats() {
     setCustomerStatsLoading(true);
 
     const response = await fetch(
-      `${API_BASE}/api/customer/${user.phone}/stats`
+      `${import.meta.env.VITE_API_URL}/api/customer/${user.phone}/stats`
     );
 
     const data = await response.json();
@@ -1297,9 +1327,54 @@ function addLoyaltyBoxes(quantityBought) {
     return updated;
   });
 }
+
+
+
+function validateCustomerDetails() {
+  setShowCustomerErrors(true);
+
+  const customerName = name.trim();
+  const customerPhone = phone.replace(/\D/g, "");
+
+  if (!customerName && !customerPhone) {
+    showMessage("Please enter your name and phone number to continue!");
+    return false;
+  }
+
+  if (!customerName) {
+    showMessage("Please enter your name to continue!");
+    return false;
+  }
+
+  if (customerPhone.length !== 10) {
+    showMessage("Please enter a valid 10-digit phone number!");
+    return false;
+  }
+
+  return true;
+}
+
+
+
   
 async function placeCODOrder() {
+  // Validate customer details before order confirmation
+  const customerName = name.trim();
+  const customerPhone = phone.replace(/\D/g, "");
+
+  if (!customerName) {
+    showMessage("Please enter your name before confirming!");
+    return;
+  }
+
+  if (customerPhone.length !== 10) {
+    showMessage("Please enter a valid 10-digit phone number!");
+    return;
+  }
+
   setPaymentProcessing(true);
+
+  // Keep the rest of your existing function below this line.
 
   try {
     const API_URL = (
@@ -1318,8 +1393,8 @@ async function placeCODOrder() {
           "Content-Type": "application/json",
         },
                 body: JSON.stringify({
-                    customer_name: name,
-                    phone: phone,
+                    customer_name: customerName,
+                    phone: customerPhone,
                     pickup_location: location,
                     pickup_slot: slot,
 
@@ -1505,6 +1580,30 @@ const response = await fetch(
 
   return (
     <div className="app-shell">
+    
+{message && (
+  <div
+    role="alert"
+    style={{
+      position: "fixed",
+      top: "20px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: 99999,
+      backgroundColor: "#222",
+      color: "#fff",
+      padding: "14px 20px",
+      borderRadius: "10px",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
+      width: "max-content",
+      maxWidth: "90%",
+      textAlign: "center",
+      fontSize: "14px",
+    }}
+  >
+    ⚠️ {message}
+  </div>
+)}
 
       {/* PHONE */}
 
@@ -3484,49 +3583,59 @@ const response = await fetch(
                               ? "location-option selected-location"
                               : "location-option"
                           }
-                          onClick={() => {
 
-                            if (!navigator.geolocation) {
-                              showMessage("Location is not supported");
-                              return;
-                            }
+onClick={() => {
+  if (!navigator.geolocation) {
+    showMessage("Your browser does not support location access.");
+    return;
+  }
 
-                            showMessage("Getting your location...");
+  showMessage("Getting your location...");
 
-                            navigator.geolocation.getCurrentPosition(
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
 
-                              (position) => {
+      const liveAddress =
+        `Live Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
 
-                                const lat =
-                                  position.coords.latitude;
+      setLocationType("live");
+      setLocation(liveAddress);
 
-                                const lng =
-                                  position.coords.longitude;
+      localStorage.setItem(
+        "gofit_delivery_location",
+        liveAddress
+      );
 
-                                setLocationType("live");
+      localStorage.setItem(
+        "gofit_location_type",
+        "live"
+      );
 
-                                setLocation(
-                                  `Live Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`
-                                );
+      showMessage("Live location captured successfully ✓");
+    },
+    (error) => {
+      console.error("Location error:", error);
 
-                                showMessage("Live location selected ✓");
-                              },
+      if (error.code === 1) {
+        showMessage("Allow location access in your browser settings.");
+      } else if (error.code === 2) {
+        showMessage("Location unavailable. Check your device settings.");
+      } else if (error.code === 3) {
+        showMessage("Location timed out. Please try again.");
+      } else {
+        showMessage("Unable to get your location. Please try again.");
+      }
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 60000
+    }
+  );
+}}
 
-                              () => {
-                                showMessage(
-                                  "Please allow location access"
-                                );
-                              },
-
-                              {
-                                enableHighAccuracy: true,
-                                timeout: 10000,
-                                maximumAge: 0
-                              }
-
-                            );
-
-                          }}
                         >
 
                           <span>📍</span>
@@ -3544,6 +3653,16 @@ const response = await fetch(
 
 
                         {/* ADD YOUR LOCATION */}
+                        
+{locationType === "live" && location && (
+  <div className="location-preview">
+    <span>📍</span>
+    <div>
+      <strong>Selected Live Location</strong>
+      <small>{location}</small>
+    </div>
+  </div>
+)}
 
                         <button
                           type="button"
@@ -3570,6 +3689,16 @@ const response = await fetch(
 
 
                         {/* OTHER */}
+
+{locationType === "add" && location && (
+  <div className="location-preview">
+    <span>🗺️</span>
+    <div>
+      <strong>Saved Delivery Address</strong>
+      <small>{location}</small>
+    </div>
+  </div>
+)}
 
                         <button
                           type="button"
@@ -3608,7 +3737,15 @@ const response = await fetch(
                       <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Your name"
+                    placeholder="Your name"
+                    style={{
+  borderColor: showCustomerErrors && !name.trim()
+    ? "#ef4444"
+    : undefined,
+  boxShadow: showCustomerErrors && !name.trim()
+    ? "0 0 0 1px #ef4444"
+    : undefined,
+}}
                       />
 
                       <input
@@ -3618,7 +3755,17 @@ const response = await fetch(
                             e.target.value.replace(/\D/g, "").slice(0, 10)
                           )
                         }
-                        placeholder="10-digit phone number"
+                    placeholder="10-digit phone number"
+                    style={{
+  borderColor:
+    showCustomerErrors && phone.replace(/\D/g, "").length !== 10
+      ? "#ef4444"
+      : undefined,
+  boxShadow:
+    showCustomerErrors && phone.replace(/\D/g, "").length !== 10
+      ? "0 0 0 1px #ef4444"
+      : undefined,
+}}
                         type="tel"
                       />
                     </section>
@@ -3652,13 +3799,16 @@ const response = await fetch(
                       </div>
                     </section>
 
-                    <button
-                      type="button"
-                      className="confirm"
-                      onClick={() => setPaymentModal(true)}
-                    >
+                      <button
+                        type="button"
+                        className="confirm"
+                        onClick={() => {
+                        if (!validateCustomerDetails()) return;
+                        setPaymentModal(true);
+                                       }}
+                        >
                       ➤ &nbsp; Confirm & Send Order to Kitchen
-                    </button>
+                  </button>
                   </section>
                 </>
               )}
