@@ -4214,3 +4214,121 @@ SMALL REWARD CARD
                 font-weight: 600;
                 letter-spacing: .3px;
             }
+            
+/* GoFit Order Success Popup */
+
+.order-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 8, 18, 0.82);
+  backdrop-filter: blur(8px);
+  animation: successFadeIn 0.25s ease-out;
+}
+
+.order-success-modal {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 24px 26px;
+  text-align: center;
+  color: #f8fafc;
+  background: #112235;
+  border: 1px solid rgba(16, 201, 129, 0.4);
+  border-radius: 24px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.4);
+  animation: successPop 0.4s ease-out;
+}
+
+.order-success-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: #b8c6d8;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.success-check {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 20px;
+  animation: successBounce 0.6s ease-out;
+}
+
+.success-check svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 16px rgba(16, 201, 129, 0.35));
+}
+
+.order-success-modal h2 {
+  margin: 0 0 10px;
+  font-size: 23px;
+}
+
+.order-success-modal p {
+  color: #a7b7c9;
+  margin-bottom: 24px;
+}
+
+.success-order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: #0b1b2b;
+  border: 1px solid #263f52;
+  border-radius: 14px;
+  font-size: 13px;
+}
+
+.success-order-total strong {
+  color: #10c981;
+  font-size: 22px;
+}
+
+.success-continue {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #10c981;
+  color: #05251a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.success-continue:hover {
+  background: #24e09a;
+}
+
+@keyframes successFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes successPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes successBounce {
+  0% { transform: scale(0.3); }
+  65% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}

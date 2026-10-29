@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 import hashlib
 import secrets
+import httpx
 
 from dotenv import load_dotenv
 
@@ -52,7 +53,7 @@ SUPABASE_SECRET_KEY = (
 
 GROQ_API_KEY = (
     os.getenv("GROQ_API_KEY") or ""
-).strip()
+).strip()    
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 RESEND_FROM_EMAIL = os.getenv(
@@ -75,12 +76,98 @@ ADMIN_PHONE = "".join(
 ADMIN_PASSWORD = os.getenv(
     "ADMIN_PASSWORD"
 )
+WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
+WHATSAPP_ADMIN_NUMBER = os.getenv("WHATSAPP_ADMIN_NUMBER", "").strip()
+WHATSAPP_TEMPLATE_NAME = os.getenv("WHATSAPP_TEMPLATE_NAME", "gofit_new_order").strip()
+WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v26.0").strip()
 
 JWT_SECRET = os.getenv(
     "JWT_SECRET"
 )
+# =========================================================
+# WHATSAPP NEW ORDER NOTIFICATION
+# =========================================================
 
+async def send_whatsapp_order_notification(order: dict):
+    if not all([
+        WHATSAPP_ACCESS_TOKEN,
+        WHATSAPP_PHONE_NUMBER_ID,
+        WHATSAPP_ADMIN_NUMBER,
+    ]):
+        print("WhatsApp notification skipped: credentials missing")
+        return
+
+    addons = order.get("addons") or []
+    addon_names = [
+        str(item.get("name", "Add-on"))
+        for item in addons
+        if isinstance(item, dict)
+    ]
+
+    items = (
+        f'{order.get("product_name", "GoFit Regular Box")} '
+        f'x{order.get("quantity", 1)}'
+    )
+
+    if addon_names:
+        items += "; Add-ons: " + ", ".join(addon_names)
+
+    parameters = [
+        str(order.get("id", "N/A")),
+        str(order.get("customer_name", "Customer"))[:200],
+        str(order.get("phone", "Not provided"))[:50],
+        items[:500],
+        f'₹{order.get("total_amount", 0)}',
+        str(order.get("pickup_location", "Not provided"))[:500],
+    ]
+
+    url = (
+        f"https://graph.facebook.com/"
+        f"{WHATSAPP_API_VERSION}/"
+        f"{WHATSAPP_PHONE_NUMBER_ID}/messages"
+    )
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": WHATSAPP_ADMIN_NUMBER,
+        "type": "template",
+        "template": {
+            "name": WHATSAPP_TEMPLATE_NAME,
+            "language": {"code": "en"},
+            "components": [{
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": value}
+                    for value in parameters
+                ],
+            }],
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                url,
+                headers={
+                    "Authorization": f"Bearer {WHATSAPP_ACCESS_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+
+        if response.is_success:
+            print("WhatsApp notification accepted by Meta")
+        else:
+            print(
+                "WhatsApp notification failed:",
+                response.status_code,
+                response.text[:500],
+            )
+    except Exception as exc:
+        print("WhatsApp notification error:", str(exc))
 JWT_ALGORITHM = "HS256"
+
 
 
 # =========================================================
@@ -464,10 +551,80 @@ async def broadcast_order(
                 websocket
             )
 
+# =========================================================
+# CREATE COD ORDER
+# =========================================================
 
+@app.post("/api/orders")
+async def create_order(order: Order):
+    if not supabase:
+        raise HTTPException(
+            status_code=500,
+            detail="Supabase is not configured",
+        )
+
+    if order.payment_method.upper() != "COD":
+        raise HTTPException(
+            status_code=400,
+            detail="Only COD orders are supported here",
+        )
+
+    # Save the order before sending notifications.
+    order_data = order.model_dump()
+    order_data["payment_method"] = "COD"
+    order_data["payment_status"] = "pending"
+    order_data["status"] = "received"
+    order_data["created_at"] = datetime.now(
+        timezone.utc
+    ).isoformat()
+
+    try:
+        result = (
+            supabase
+            .table("orders")
+            .insert(order_data)
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Order could not be saved",
+            )
+
+        new_order = result.data[0]
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print("ORDER SAVE ERROR:", str(exc))
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to save order",
+        )
+
+    # Notify the live admin dashboard.
+    try:
+        await broadcast_admin({
+            "type": "new_order",
+            "order": new_order,
+        })
+    except Exception as exc:
+        print("ADMIN DASHBOARD NOTIFICATION ERROR:", str(exc))
+
+    # Notify the admin on WhatsApp.
+    await send_whatsapp_order_notification(new_order)
+
+    return {
+    **new_order,
+    "success": True,
+    "message": "COD order received",
+    "order": new_order,
+}
 # =========================================================
 # HOME
 # =========================================================
+
 
 @app.get("/")
 def home():

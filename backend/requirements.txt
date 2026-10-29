@@ -6,5 +6,5 @@ supabase
 groq
 python-jose
 python-multipart
-resend
-      
+resent
+httpx

@@ -250,7 +250,8 @@ const [order, setOrder] = useState(null);
 const [message, setMessage] = useState("");
 
 // COD PAYMENT
-const [paymentModal, setPaymentModal] = useState(false);
+  const [paymentModal, setPaymentModal] = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
 const [paymentProcessing, setPaymentProcessing] = useState(false);
 
 const addonTotal = selectedAddons.reduce(
@@ -1298,7 +1299,9 @@ async function placeCODOrder() {
   setPaymentProcessing(true);
 
   try {
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:8000"
+).replace(/\/+$/, "");
 
     if (!API_URL) {
       throw new Error("VITE_API_URL is not configured");
@@ -1347,18 +1350,13 @@ async function placeCODOrder() {
             );
         }
 
-        setOrder(data);
+        setOrder(data.order || data);
 
         addLoyaltyBoxes(quantity);
 
-        setPaymentModal(false);
-        setPaymentProcessing(false);
-
-        setPage("track");
-
-        showMessage(
-            "COD order sent to GoFit kitchen ✓"
-        );
+setPaymentModal(false);
+setPaymentProcessing(false);
+setShowOrderSuccess(true);
 
     } catch (error) {
 
@@ -1383,6 +1381,9 @@ useEffect(() => {
   }
 
   loadAdminOrders();
+  const refreshTimer = setInterval(() => {
+  loadAdminOrders(false);
+}, 10000);
 
   const apiUrl =
     import.meta.env.VITE_API_URL ||
@@ -1472,9 +1473,10 @@ useEffect(() => {
     );
   };
 
-  return () => {
-    socket.close();
-  };
+return () => {
+  clearInterval(refreshTimer);
+  socket.close();
+};
 
 }, [user]);
   useEffect(() => {
@@ -3794,7 +3796,58 @@ const response = await fetch(
 
         </div>
     </div>
+        )}
+        
+{showOrderSuccess && (
+  <div className="order-success-overlay">
+    <div
+      className="order-success-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="order-success-close"
+        onClick={() => setShowOrderSuccess(false)}
+      >
+        ×
+      </button>
+
+      <div className="success-check">
+        <svg viewBox="0 0 52 52" aria-hidden="true">
+          <circle cx="26" cy="26" r="24" fill="#10c981" />
+          <path
+            d="M14 27 L22 35 L39 18"
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      <h2>Order Placed Successfully!</h2>
+      <p>Your GoFit box is confirmed.</p>
+
+      <div className="success-order-total">
+        <span>Cash to pay on delivery</span>
+        <strong>₹{total}</strong>
+      </div>
+
+      <button
+        type="button"
+        className="success-continue"
+        onClick={() => {
+          setShowOrderSuccess(false);
+          setPage("track");
+        }}
+      >
+        Track My Order
+      </button>
+    </div>
+  </div>
 )}
+
         {showLoyalty && (
   <div
     className="loyalty-modal-overlay"
