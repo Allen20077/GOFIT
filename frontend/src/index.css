@@ -4440,3 +4440,257 @@ body {
   font-size: 11px;
   line-height: 1.5;
 }
+
+/* ===== Clickable GoFit Statistics ===== */
+
+.admin-stat-card {
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  min-width: 0;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+button.admin-stat-card {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-3px);
+  border-color: #34d399;
+}
+
+.admin-stat-card:focus-visible {
+  outline: 2px solid #34d399;
+  outline-offset: 3px;
+}
+
+.admin-stat-card .stat-card-hint {
+  display: block;
+  margin-top: 6px;
+  color: #8fa8c4;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* ===== Manual Statistic Popup ===== */
+
+.stats-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 8, 20, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.stats-modal {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 28px;
+  border: 1px solid #2b405b;
+  border-radius: 20px;
+  background: #0f1b2d;
+  color: #f8fafc;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+}
+
+.stats-modal * {
+  box-sizing: border-box;
+}
+
+.stats-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #30445e;
+  border-radius: 10px;
+  background: #172b43;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.stats-modal-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
+  border: 1px solid #245447;
+  border-radius: 15px;
+  background: #12332f;
+  color: #34d399;
+  font-size: 25px;
+}
+
+.stats-modal h3 {
+  margin: 0 35px 8px 0;
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.stats-modal-description {
+  margin: 0 0 22px;
+  color: #aabbd0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.stats-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-modal-form label {
+  margin-top: 8px;
+  color: #e2eaf4;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stats-modal-form label span {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.stats-modal-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid #36506c;
+  border-radius: 10px;
+  background: #0b1524;
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+}
+
+.stats-modal-form input::placeholder {
+  color: #71849b;
+}
+
+.stats-modal-form input:focus {
+  outline: 2px solid #34d399;
+  outline-offset: 1px;
+}
+
+.stats-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.stats-modal-actions button {
+  min-height: 44px;
+  padding: 11px 17px;
+  border: 1px solid #36506c;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stats-modal-cancel {
+  background: #172b43;
+  color: #e2eaf4;
+}
+
+.stats-modal-save {
+  border-color: #34d399 !important;
+  background: #10b981;
+  color: #06281e;
+}
+
+.stats-modal-save:hover {
+  background: #34d399;
+}
+
+@media (max-width: 480px) {
+  .stats-modal {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .stats-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats-modal-actions button {
+    width: 100%;
+    padding: 10px;
+  }
+}
+
+
+/* Keep Order History title and refresh button on one row */
+.admin-section-title {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100%;
+  gap: 12px;
+}
+
+.admin-section-title > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-section-title > button {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  margin: 0 0 0 auto !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* FIX: Order History title and refresh button */
+.admin-orders-section .admin-orders-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 12px !important;
+  margin-bottom: 10px !important;
+}
+
+.admin-orders-section .admin-orders-header h3 {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.admin-orders-section .admin-orders-header button {
+  position: static !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  margin: 0 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

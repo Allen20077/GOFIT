@@ -218,7 +218,29 @@ const [photoUploading, setPhotoUploading] =
 // ADMIN DASHBOARD
 // ================================
 
-const [adminOrders, setAdminOrders] = useState([]);
+  const [adminOrders, setAdminOrders] = useState([]);
+  // MANUAL DASHBOARD STATISTICS
+const [manualOrders, setManualOrders] = useState(() =>
+  Number(localStorage.getItem("gofit_manual_orders") || 0)
+);
+
+const [manualBoxes, setManualBoxes] = useState(() =>
+  Number(localStorage.getItem("gofit_manual_boxes") || 0)
+);
+
+// STATISTIC POPUP
+const [showStatsModal, setShowStatsModal] = useState(false);
+const [activeStat, setActiveStat] = useState("orders");
+const [manualStatValue, setManualStatValue] = useState("");
+const [manualStatNote, setManualStatNote] = useState("");
+  // MANUAL REVENUE
+const [manualRevenue, setManualRevenue] = useState(() => {
+  return Number(localStorage.getItem("gofit_manual_revenue") || 0);
+});
+
+const [manualRevenueInput, setManualRevenueInput] = useState("");
+const [manualRevenueNote, setManualRevenueNote] = useState("");
+const [showManualRevenueForm, setShowManualRevenueForm] = useState(false);
 const [adminLoading, setAdminLoading] = useState(false);
 const [adminLastChecked, setAdminLastChecked] = useState(null);
 const [adminNotificationCount, setAdminNotificationCount] = useState(0);
@@ -1220,7 +1242,8 @@ function logoutUser() {
 // ================================
 // LOAD ALL ORDERS FOR ADMIN
 // ================================
-async function loadAdminOrders(showLoader = true) {
+  async function loadAdminOrders(showLoader = true) {
+  
   if (user?.role !== "admin") {
     return;
   }
@@ -1263,7 +1286,72 @@ async function loadAdminOrders(showLoader = true) {
   } finally {
     setAdminLoading(false);
   }
+  }
+  // SAVE MANUAL REVENUE
+function addManualRevenue() {
+  const amount = Number(manualRevenueInput);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    alert("Please enter a valid amount greater than ₹0.");
+    return;
+  }
+
+  const updatedRevenue = manualRevenue + amount;
+
+  localStorage.setItem(
+    "gofit_manual_revenue",
+    String(updatedRevenue)
+  );
+
+  setManualRevenue(updatedRevenue);
+  setManualRevenueInput("");
+  setManualRevenueNote("");
+  setShowManualRevenueForm(false);
+
+  alert("Manual revenue added successfully!");
 }
+  
+function saveManualStat() {
+  const value = Number(manualStatValue);
+
+  if (!Number.isFinite(value) || value <= 0) {
+    showMessage("Enter a value greater than zero.");
+    return;
+  }
+
+  // Orders and boxes must be whole numbers.
+  if (
+    (activeStat === "orders" || activeStat === "boxes") &&
+    !Number.isInteger(value)
+  ) {
+    showMessage("Orders and boxes must be whole numbers.");
+    return;
+  }
+
+  if (activeStat === "orders") {
+    const updated = manualOrders + value;
+
+    localStorage.setItem("gofit_manual_orders", String(updated));
+    setManualOrders(updated);
+  } else if (activeStat === "boxes") {
+    const updated = manualBoxes + value;
+
+    localStorage.setItem("gofit_manual_boxes", String(updated));
+    setManualBoxes(updated);
+  } else if (activeStat === "revenue") {
+    const updated = manualRevenue + value;
+
+    localStorage.setItem("gofit_manual_revenue", String(updated));
+    setManualRevenue(updated);
+  }
+
+  setManualStatValue("");
+  setManualStatNote("");
+  setShowStatsModal(false);
+
+  showMessage("Dashboard record added successfully ✓");
+}
+
 // ================================
 // ENABLE NOTIFICATIONS
 // ================================
@@ -2828,101 +2916,218 @@ const response = await fetch(
 
                   </div>
 
+{/* STATISTICS */}
 
-                  {/* STATISTICS */}
+<div className="admin-stats">
 
-                  <div className="admin-stats">
+  {/* TOTAL ORDERS */}
+  <button
+    type="button"
+    className="admin-stat-card"
+    onClick={() => {
+      setActiveStat("orders");
+      setManualStatValue("");
+      setManualStatNote("");
+      setShowStatsModal(true);
+    }}
+    aria-label="Add manual order records"
+  >
+    <span>📦</span>
 
-                    <div className="admin-stat-card">
+    <strong>{adminOrders.length + manualOrders}</strong>
 
-                      <span>
-                        📦
-                      </span>
+    <small>Total Orders</small>
+    <span className="stat-card-hint">＋ Add record</span>
+  </button>
 
-                      <strong>
-                        {adminOrders.length}
-                      </strong>
+  {/* BOXES SOLD */}
+  <button
+    type="button"
+    className="admin-stat-card"
+    onClick={() => {
+      setActiveStat("boxes");
+      setManualStatValue("");
+      setManualStatNote("");
+      setShowStatsModal(true);
+    }}
+    aria-label="Add manual box sales"
+  >
+    <span>🥗</span>
 
-                      <small>
-                        Total Orders
-                      </small>
+    <strong>
+      {adminOrders.reduce(
+        (total, order) =>
+          total + Number(order.quantity || 0),
+        0
+      ) + manualBoxes}
+    </strong>
 
-                    </div>
+    <small>Boxes Sold</small>
+    <span className="stat-card-hint">＋ Add record</span>
+  </button>
+
+  {/* REVENUE */}
+  <button
+    type="button"
+    className="admin-stat-card"
+    onClick={() => {
+      setActiveStat("revenue");
+      setManualStatValue("");
+      setManualStatNote("");
+      setShowStatsModal(true);
+    }}
+    aria-label="Add manual revenue"
+  >
+    <span>₹</span>
+
+    <strong>
+      ₹{(
+        adminOrders.reduce(
+          (total, order) =>
+            total + Number(order.total_amount || 0),
+          0
+        ) + manualRevenue
+      ).toLocaleString("en-IN", {
+        maximumFractionDigits: 2
+      })}
+    </strong>
+
+    <small>Revenue</small>
+    <span className="stat-card-hint">＋ Add record</span>
+  </button>
+
+              </div>
+              
+{/* MANUAL STATISTIC POPUP */}
+
+{showStatsModal && (
+  <div
+    className="stats-modal-overlay"
+    onClick={() => setShowStatsModal(false)}
+  >
+    <section
+      className="stats-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stats-modal-title"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="stats-modal-close"
+        aria-label="Close popup"
+        onClick={() => setShowStatsModal(false)}
+      >
+        ×
+      </button>
+
+      <div className="stats-modal-icon">
+        {activeStat === "orders"
+          ? "📦"
+          : activeStat === "boxes"
+            ? "🥗"
+            : "₹"}
+      </div>
+
+      <h3 id="stats-modal-title">
+        {activeStat === "orders"
+          ? "Add Order Records"
+          : activeStat === "boxes"
+            ? "Add Boxes Sold"
+            : "Add Revenue"}
+      </h3>
+
+      <p className="stats-modal-description">
+        {activeStat === "orders"
+          ? "Record orders received outside your online ordering system."
+          : activeStat === "boxes"
+            ? "Record boxes sold outside your online ordering system."
+            : "Record cash sales not already included in your online orders."}
+      </p>
+
+      <form
+        className="stats-modal-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          saveManualStat();
+        }}
+      >
+        <label htmlFor="manual-stat-value">
+          {activeStat === "orders"
+            ? "Number of orders"
+            : activeStat === "boxes"
+              ? "Number of boxes"
+              : "Revenue amount (₹)"}
+        </label>
 
 
-                    <div className="admin-stat-card">
-
-                      <span>
-                        🥗
-                      </span>
-
-                      <strong>
-                        {adminOrders.reduce(
-                          (total, order) =>
-                            total +
-                            Number(order.quantity || 0),
-                          0
-                        )}
-                      </strong>
-
-                      <small>
-                        Boxes Sold
-                      </small>
-
-                    </div>
+<input
+  id="manual-stat-value"
+  type="number"
+  min={activeStat === "revenue" ? "0.01" : "1"}
+  step={activeStat === "revenue" ? "0.01" : "1"}
+  value={manualStatValue}
+  onChange={(event) =>
+    setManualStatValue(event.target.value)
+  }
+  placeholder={
+    activeStat === "revenue"
+      ? "e.g. 500"
+      : "e.g. 10"
+  }
+  required
+/>
 
 
-                    <div className="admin-stat-card">
+        <label htmlFor="manual-stat-note">
+          Description <span>(optional)</span>
+        </label>
 
-                      <span>
-                        ₹
-                      </span>
+        <input
+          id="manual-stat-note"
+          type="text"
+          value={manualStatNote}
+          onChange={(event) =>
+            setManualStatNote(event.target.value)
+          }
+          placeholder="e.g. Offline campus sales"
+        />
 
-                      <strong>
-                        ₹
-                        {adminOrders.reduce(
-                          (total, order) =>
-                            total +
-                            Number(
-                              order.total_amount || 0
-                            ),
-                          0
-                        )}
-                      </strong>
+        <div className="stats-modal-actions">
+          <button
+            type="button"
+            className="stats-modal-cancel"
+            onClick={() => setShowStatsModal(false)}
+          >
+            Cancel
+          </button>
 
-                      <small>
-                        Revenue
-                      </small>
+          <button
+            type="submit"
+            className="stats-modal-save"
+          >
+            Save Record
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+)}
 
-                    </div>
 
-                  </div>
-
-
-                  {/* ORDER HISTORY */}
-
-                  <div className="admin-orders-section">
-
-                    <div className="admin-section-title">
-
-                      <div>
-                        <small>
-                          LIVE ORDERS
-                        </small>
-
+                    <div className="admin-orders-section">
+                      <div className="admin-orders-header">
                         <h3>
                           Order History
                         </h3>
+
+                        <button
+                          type="button"
+                          onClick={() => loadAdminOrders()}
+                        >
+                          ↻
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => loadAdminOrders()}
-                      >
-                        ↻
-                      </button>
-
-                    </div>
 
 
                     {adminLoading ? (
