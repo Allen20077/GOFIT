@@ -1666,12 +1666,14 @@ def get_customer_order_stats(phone: str):
         result = (
             supabase
             .table("orders")
-            .select("quantity, status")
+            .select("phone, quantity, status")
             .eq("phone", clean_phone)
             .execute()
         )
-
-        orders = result.data or []
+        orders = [
+            order for order in (result.data or [])
+            if clean_phone_number(str(order.get("phone", ""))) == clean_phone
+        ]
 
         total_orders = len(orders)
 

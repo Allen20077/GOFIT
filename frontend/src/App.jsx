@@ -2820,7 +2820,6 @@ const response = await fetch(
                       <div className="admin-order-list">
 
                         {[...adminOrders]
-                          .reverse()
                           .map((order, index) => (
 
                             <article
