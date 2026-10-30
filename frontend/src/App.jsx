@@ -1212,7 +1212,59 @@ async function updateOrderStatus(orderId, status) {
     );
   }
   }
-  async function cancelOrder(orderId) {
+// ========================================
+// HIDE DELETED ORDERS FROM ADMIN HISTORY
+// ========================================
+
+function getHiddenAdminOrderIds() {
+  try {
+    const hiddenOrders = JSON.parse(
+      localStorage.getItem("gofit_hidden_admin_orders") || "[]"
+    );
+
+    return Array.isArray(hiddenOrders) ? hiddenOrders : [];
+  } catch {
+    return [];
+  }
+}
+
+// ========================================
+// DELETE ORDER FROM ADMIN HISTORY
+// ========================================
+
+function deleteOrderFromHistory(orderId) {
+  const confirmed = window.confirm(
+    "Remove this order from Order History? The original order and sales record will remain unchanged."
+  );
+
+  if (!confirmed) return;
+
+  const hiddenOrders = getHiddenAdminOrderIds();
+
+  const updatedHiddenOrders = [
+    ...new Set([...hiddenOrders, String(orderId)])
+  ];
+
+  localStorage.setItem(
+    "gofit_hidden_admin_orders",
+    JSON.stringify(updatedHiddenOrders)
+  );
+
+  setAdminOrders((currentOrders) =>
+    currentOrders.filter(
+      (order) =>
+        String(order.id || order.order_id) !== String(orderId)
+    )
+  );
+
+  showMessage("Order removed from history ✓");
+}
+
+// ========================================
+// CANCEL ORDER
+// ========================================
+
+async function cancelOrder(orderId) {
   const reason = window.prompt(
     "Reason for cancelling this order:"
   );
@@ -1224,7 +1276,6 @@ async function updateOrderStatus(orderId, status) {
   const token = localStorage.getItem(
     "gofit_admin_token"
   );
-
   if (!token) {
     showMessage("Admin session expired");
     return;
@@ -1331,7 +1382,16 @@ function logoutUser() {
       );
     }
 
-    setAdminOrders(data.orders || []);
+    const hiddenOrders = getHiddenAdminOrderIds();
+
+setAdminOrders(
+  (data.orders || []).filter(
+    (order) =>
+      !hiddenOrders.includes(
+        String(order.id || order.order_id)
+      )
+  )
+);
     setAdminLastChecked(new Date());
 
   } catch (error) {
@@ -1513,6 +1573,23 @@ function disableAdminNotifications() {
   localStorage.setItem("gofit_admin_notifications", "false");
   setAdminNotificationsEnabled(false);
   showMessage("Admin notifications disabled");
+}
+  function showAdminNotification(order) {
+  if (
+    !adminNotificationsEnabled ||
+    !("Notification" in window) ||
+    Notification.permission !== "granted"
+  ) {
+    return;
+  }
+
+  const orderId = order?.id || order?.order_id || "New";
+
+  new Notification("GoFit - New Order", {
+    body: `You received a new order. Order ID: ${orderId}`,
+    icon: "/favicon.ico",
+    tag: `gofit-order-${orderId}`
+  });
 }
 
   function showMessage(text) {
@@ -1716,11 +1793,6 @@ useEffect(() => {
     return;
   }
 
-  loadAdminOrders();
-  const refreshTimer = setInterval(() => {
-  loadAdminOrders(false);
-}, 10000);
-
   const apiUrl =
     import.meta.env.VITE_API_URL ||
     "http://localhost:8000";
@@ -1733,6 +1805,14 @@ useEffect(() => {
     console.error("Invalid API URL:", apiUrl);
     return;
   }
+
+  // Load admin orders
+  loadAdminOrders();
+
+  // Refresh orders every 10 seconds
+  const refreshTimer = setInterval(() => {
+    loadAdminOrders(false);
+  }, 10000);
 
   const protocol =
     api.protocol === "https:"
@@ -1814,7 +1894,7 @@ return () => {
   socket.close();
 };
 
-}, [user]);
+}, [user, adminNotificationsEnabled]);
   useEffect(() => {
     if (!order?.id) return;
 
@@ -3502,15 +3582,14 @@ onClick={() => {
                                   >
                                     ✕ Reject
                                   </button>
-
-                                  <button
-                                    className="cancel-order"
-                                    onClick={() =>
-                                      cancelOrder(order.id)
-                                    }
-                                  >
-                                    🗑 Cancel
-                                  </button>
+<button
+  className="cancel-order"
+  onClick={() =>
+    deleteOrderFromHistory(order.id || order.order_id)
+  }
+>
+  🗑 Delete
+</button>
 
                                 </div>
                                 <span
@@ -3741,9 +3820,10 @@ onClick={() => {
                       <p>Fresh. Simple. High Protein.</p>
                     </div>
 
-                    <span className="protein-badge">
-                      {PRODUCT.protein}
-                    </span>
+                   <span className="protein-badge">
+  <strong className="protein-number">36g</strong>
+  <span className="protein-label">Protein</span>
+</span>
                   </section>
 
                   <section className="product-card">
