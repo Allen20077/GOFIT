@@ -293,7 +293,15 @@ const [manualRevenueNote, setManualRevenueNote] = useState("");
 const [showManualRevenueForm, setShowManualRevenueForm] = useState(false);
 const [adminLoading, setAdminLoading] = useState(false);
 const [adminLastChecked, setAdminLastChecked] = useState(null);
-const [adminNotificationCount, setAdminNotificationCount] = useState(0);
+  const [adminNotificationCount, setAdminNotificationCount] = useState(0);
+  const [adminNotificationsEnabled, setAdminNotificationsEnabled] =
+  useState(() => {
+    return (
+      localStorage.getItem("gofit_admin_notifications") === "true" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    );
+  });
 const [previousOrderCount, setPreviousOrderCount] = useState(0);
 const [selectedPlan, setSelectedPlan] = useState(null);
 const [quantity, setQuantity] = useState(1);
@@ -1470,33 +1478,43 @@ function deleteManualStat(id) {
 // ENABLE NOTIFICATIONS
 // ================================
 
+
 async function enableAdminNotifications() {
   if (!("Notification" in window)) {
-    showMessage(
-      "This browser does not support notifications"
-    );
+    showMessage("This browser does not support notifications");
     return;
   }
 
   try {
-    const permission =
-      await Notification.requestPermission();
+    const permission = await Notification.requestPermission();
 
     if (permission === "granted") {
-      showMessage(
-        "Admin notifications enabled ✓"
-      );
+      localStorage.setItem("gofit_admin_notifications", "true");
+      setAdminNotificationsEnabled(true);
+
+      new Notification("GoFit Admin", {
+        body: "Notifications are now enabled!",
+        icon: "/favicon.ico"
+      });
+
+      showMessage("Admin notifications enabled ✓");
     } else {
-      showMessage(
-        "Notification permission was not granted"
-      );
+      localStorage.setItem("gofit_admin_notifications", "false");
+      setAdminNotificationsEnabled(false);
+      showMessage("Please allow notifications in browser settings");
     }
-  } catch {
-    showMessage(
-      "Could not enable notifications"
-    );
+  } catch (error) {
+    console.error("Notification error:", error);
+    showMessage("Could not enable notifications");
   }
 }
+
+function disableAdminNotifications() {
+  localStorage.setItem("gofit_admin_notifications", "false");
+  setAdminNotificationsEnabled(false);
+  showMessage("Admin notifications disabled");
+}
+
   function showMessage(text) {
     setMessage(text);
 
@@ -1743,18 +1761,18 @@ useEffect(() => {
     try {
       const data = JSON.parse(event.data);
 
-      if (data.type === "new_order") {
-        setAdminOrders((current) => [
-          data.order,
-          ...current,
-        ]);
+if (data.type === "new_order") {
+  setAdminOrders((current) => [
+    data.order,
+    ...current,
+  ]);
 
-        setAdminNotificationCount(
-          (current) => current + 1
-        );
+  setAdminNotificationCount(
+    (current) => current + 1
+  );
 
-        showAdminNotification(1);
-      }
+  showAdminNotification(data.order);
+}
 
       if (
         data.type === "order_updated" ||
@@ -2943,37 +2961,49 @@ const response = await fetch(
                   </div>
 
 
-                  {/* NOTIFICATION */}
 
-                  <div className="admin-notification-card">
+{/* ADMIN NOTIFICATION SETTINGS */}
 
-                    <div className="notification-icon">
-                      🔔
-                    </div>
+<div className="admin-notification-card">
 
-                    <div>
-                      <strong>
-                        New Order Alerts
-                      </strong>
+  <div className="notification-icon">
+    🔔
+  </div>
 
-                      <p>
-                        {adminNotificationCount > 0
-                          ? `${adminNotificationCount} new order${adminNotificationCount > 1
-                            ? "s"
-                            : ""
-                          }`
-                          : "No new orders"}
-                      </p>
-                    </div>
+  <div>
+    <strong>New Order Alerts</strong>
 
-                    <button
-                      type="button"
-                      onClick={enableAdminNotifications}
-                    >
-                      Enable
-                    </button>
+    <p>
+      {adminNotificationsEnabled
+        ? "Notifications enabled ✓"
+        : "Notifications are disabled"}
+    </p>
 
-                  </div>
+    <small>
+      {adminNotificationCount > 0
+        ? `${adminNotificationCount} new orders`
+        : "Waiting for new orders"}
+    </small>
+  </div>
+
+  {adminNotificationsEnabled ? (
+    <button
+      type="button"
+      onClick={disableAdminNotifications}
+    >
+      Disable
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={enableAdminNotifications}
+    >
+      Enable
+    </button>
+  )}
+
+</div>
+
 
 {/* STATISTICS */}
 
