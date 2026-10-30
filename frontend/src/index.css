@@ -4888,3 +4888,95 @@ button.admin-stat-card {
 .bottom-nav .nav-button.active {
   justify-self: stretch;
 }
+
+/* Move only Logout button down */
+.admin-profile-actions .logout-button {
+  transform: translateY(25px);
+  margin-bottom: 25px;
+}
+
+/* MANUAL DASHBOARD RECORD MANAGEMENT */
+
+.manual-records-list {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e5e5;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.manual-records-list h4 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.manual-records-empty {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.manual-record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 9px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+}
+
+.manual-record-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.manual-record-info strong {
+  font-size: 15px;
+}
+
+.manual-record-info span,
+.manual-record-info small {
+  font-size: 12px;
+  color: #777;
+  overflow-wrap: anywhere;
+}
+
+.manual-record-actions {
+  display: flex;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.manual-record-actions button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.manual-record-actions button:first-child {
+  background: #e8f1ff;
+  color: #1557a0;
+}
+
+.manual-record-actions button:last-child {
+  background: #ffe9e9;
+  color: #c62828;
+}
+
+@media (max-width: 480px) {
+  .manual-record-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .manual-record-actions {
+    width: 100%;
+  }
+}

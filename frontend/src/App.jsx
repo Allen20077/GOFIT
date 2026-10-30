@@ -144,6 +144,32 @@ function NavButton({
 }
 
 function App() {
+  function loadManualRecords(key, legacyKey) {
+  try {
+    const saved = localStorage.getItem(key);
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+
+    const oldTotal = Number(
+      localStorage.getItem(legacyKey) || 0
+    );
+
+    return oldTotal > 0
+      ? [{
+          id: Date.now(),
+          value: oldTotal,
+          note: "Previous manual total",
+          createdAt: new Date().toISOString()
+        }]
+      : [];
+  } catch (error) {
+    console.error("Manual records loading error:", error);
+    return [];
+  }
+}
   
   const openGoFitWhatsApp = (planName) => {
     const phone = "918951056405"; // GoFit WhatsApp number
@@ -219,13 +245,39 @@ const [photoUploading, setPhotoUploading] =
 // ================================
 
   const [adminOrders, setAdminOrders] = useState([]);
-  // MANUAL DASHBOARD STATISTICS
-const [manualOrders, setManualOrders] = useState(() =>
-  Number(localStorage.getItem("gofit_manual_orders") || 0)
+
+const [manualOrderRecords, setManualOrderRecords] = useState(
+  () => loadManualRecords(
+    "gofit_manual_order_records",
+    "gofit_manual_orders"
+  )
 );
 
-const [manualBoxes, setManualBoxes] = useState(() =>
-  Number(localStorage.getItem("gofit_manual_boxes") || 0)
+const [manualBoxRecords, setManualBoxRecords] = useState(
+  () => loadManualRecords(
+    "gofit_manual_box_records",
+    "gofit_manual_boxes"
+  )
+);
+
+const [manualRevenueRecords, setManualRevenueRecords] = useState(
+  () => loadManualRecords(
+    "gofit_manual_revenue_records",
+    "gofit_manual_revenue"
+  )
+);
+
+// MANUAL TOTALS
+const manualOrders = manualOrderRecords.reduce(
+  (total, record) => total + Number(record.value || 0), 0
+);
+
+const manualBoxes = manualBoxRecords.reduce(
+  (total, record) => total + Number(record.value || 0), 0
+);
+
+const manualRevenue = manualRevenueRecords.reduce(
+  (total, record) => total + Number(record.value || 0), 0
 );
 
 // STATISTIC POPUP
@@ -233,10 +285,8 @@ const [showStatsModal, setShowStatsModal] = useState(false);
 const [activeStat, setActiveStat] = useState("orders");
 const [manualStatValue, setManualStatValue] = useState("");
 const [manualStatNote, setManualStatNote] = useState("");
-  // MANUAL REVENUE
-const [manualRevenue, setManualRevenue] = useState(() => {
-  return Number(localStorage.getItem("gofit_manual_revenue") || 0);
-});
+const [editingStatId, setEditingStatId] = useState(null);
+
 
 const [manualRevenueInput, setManualRevenueInput] = useState("");
 const [manualRevenueNote, setManualRevenueNote] = useState("");
@@ -1287,30 +1337,50 @@ function logoutUser() {
     setAdminLoading(false);
   }
   }
-  // SAVE MANUAL REVENUE
-function addManualRevenue() {
-  const amount = Number(manualRevenueInput);
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    alert("Please enter a valid amount greater than ₹0.");
-    return;
-  }
-
-  const updatedRevenue = manualRevenue + amount;
-
-  localStorage.setItem(
-    "gofit_manual_revenue",
-    String(updatedRevenue)
-  );
-
-  setManualRevenue(updatedRevenue);
-  setManualRevenueInput("");
-  setManualRevenueNote("");
-  setShowManualRevenueForm(false);
-
-  alert("Manual revenue added successfully!");
+// GET RECORDS FOR THE SELECTED STATISTIC
+function getActiveManualRecords() {
+  if (activeStat === "orders") return manualOrderRecords;
+  if (activeStat === "boxes") return manualBoxRecords;
+  return manualRevenueRecords;
 }
-  
+
+// SAVE RECORDS TO LOCAL STORAGE
+function saveManualRecords(type, records) {
+  if (type === "orders") {
+    setManualOrderRecords(records);
+    localStorage.setItem(
+      "gofit_manual_order_records",
+      JSON.stringify(records)
+    );
+    localStorage.setItem(
+      "gofit_manual_orders",
+      String(records.reduce((sum, item) => sum + Number(item.value || 0), 0))
+    );
+  } else if (type === "boxes") {
+    setManualBoxRecords(records);
+    localStorage.setItem(
+      "gofit_manual_box_records",
+      JSON.stringify(records)
+    );
+    localStorage.setItem(
+      "gofit_manual_boxes",
+      String(records.reduce((sum, item) => sum + Number(item.value || 0), 0))
+    );
+  } else {
+    setManualRevenueRecords(records);
+    localStorage.setItem(
+      "gofit_manual_revenue_records",
+      JSON.stringify(records)
+    );
+    localStorage.setItem(
+      "gofit_manual_revenue",
+      String(records.reduce((sum, item) => sum + Number(item.value || 0), 0))
+    );
+  }
+}
+
+// ADD OR UPDATE A MANUAL RECORD
 function saveManualStat() {
   const value = Number(manualStatValue);
 
@@ -1319,7 +1389,6 @@ function saveManualStat() {
     return;
   }
 
-  // Orders and boxes must be whole numbers.
   if (
     (activeStat === "orders" || activeStat === "boxes") &&
     !Number.isInteger(value)
@@ -1328,28 +1397,73 @@ function saveManualStat() {
     return;
   }
 
-  if (activeStat === "orders") {
-    const updated = manualOrders + value;
+  const records = getActiveManualRecords();
 
-    localStorage.setItem("gofit_manual_orders", String(updated));
-    setManualOrders(updated);
-  } else if (activeStat === "boxes") {
-    const updated = manualBoxes + value;
+  let updatedRecords;
 
-    localStorage.setItem("gofit_manual_boxes", String(updated));
-    setManualBoxes(updated);
-  } else if (activeStat === "revenue") {
-    const updated = manualRevenue + value;
-
-    localStorage.setItem("gofit_manual_revenue", String(updated));
-    setManualRevenue(updated);
+  if (editingStatId !== null) {
+    updatedRecords = records.map((record) =>
+      record.id === editingStatId
+        ? {
+            ...record,
+            value,
+            note: manualStatNote.trim()
+          }
+        : record
+    );
+  } else {
+    updatedRecords = [
+      ...records,
+      {
+        id: Date.now(),
+        value,
+        note: manualStatNote.trim(),
+        createdAt: new Date().toISOString()
+      }
+    ];
   }
+
+  saveManualRecords(activeStat, updatedRecords);
 
   setManualStatValue("");
   setManualStatNote("");
-  setShowStatsModal(false);
+  setEditingStatId(null);
 
-  showMessage("Dashboard record added successfully ✓");
+  showMessage(
+    editingStatId !== null
+      ? "Record updated successfully ✓"
+      : "Record added successfully ✓"
+  );
+}
+
+// LOAD A RECORD INTO THE FORM FOR EDITING
+function editManualStat(record) {
+  setEditingStatId(record.id);
+  setManualStatValue(String(record.value));
+  setManualStatNote(record.note || "");
+}
+
+// DELETE A MANUAL RECORD
+function deleteManualStat(id) {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this manual record?"
+  );
+
+  if (!confirmed) return;
+
+  const updatedRecords = getActiveManualRecords().filter(
+    (record) => record.id !== id
+  );
+
+  saveManualRecords(activeStat, updatedRecords);
+
+  if (editingStatId === id) {
+    setEditingStatId(null);
+    setManualStatValue("");
+    setManualStatNote("");
+  }
+
+  showMessage("Record deleted successfully ✓");
 }
 
 // ================================
@@ -1884,10 +1998,6 @@ const response = await fetch(
           </div>
         </div>
 
-        <div className="admin-access-badge">
-          🔐 Full Admin Access
-                    </div>
-
 <div className="admin-profile-actions">
   <button
     type="button"
@@ -2158,59 +2268,8 @@ const response = await fetch(
 
     </div>
 
-  )}
-
-{showOtpBox && (
-  <div className="otp-card">
-
-    <div className="otp-card-header">
-      <span>🔐</span>
-
-      <div>
-        <strong>Verify your email</strong>
-
-        <small>
-          Enter the 6-digit OTP sent to {profileEmail}
-        </small>
-      </div>
-    </div>
-
-    <input
-      className="otp-input"
-      type="text"
-      inputMode="numeric"
-      maxLength={6}
-      value={otp}
-      onChange={(e) =>
-        setOtp(
-          e.target.value
-            .replace(/\D/g, "")
-            .slice(0, 6)
-        )
-      }
-      placeholder="000000"
-    />
-
-    <button
-      type="button"
-      className="verify-otp-button"
-      onClick={verifyProfileOTP}
-      disabled={otpLoading || otp.length !== 6}
-    >
-      {otpLoading ? "Verifying..." : "Verify Email"}
-    </button>
-
-    <button
-      type="button"
-      className="resend-otp-button"
-      onClick={sendProfileOTP}
-      disabled={otpLoading}
-    >
-      Resend OTP
-    </button>
-
-  </div>
-)}
+                      )}
+                      
   {/* BIO */}
 
   <div className="profile-edit-field">
@@ -2926,6 +2985,7 @@ const response = await fetch(
     className="admin-stat-card"
     onClick={() => {
       setActiveStat("orders");
+      setEditingStatId(null);
       setManualStatValue("");
       setManualStatNote("");
       setShowStatsModal(true);
@@ -2944,12 +3004,13 @@ const response = await fetch(
   <button
     type="button"
     className="admin-stat-card"
-    onClick={() => {
-      setActiveStat("boxes");
-      setManualStatValue("");
-      setManualStatNote("");
-      setShowStatsModal(true);
-    }}
+onClick={() => {
+  setActiveStat("boxes");
+  setEditingStatId(null);
+  setManualStatValue("");
+  setManualStatNote("");
+  setShowStatsModal(true);
+}}
     aria-label="Add manual box sales"
   >
     <span>🥗</span>
@@ -2970,12 +3031,13 @@ const response = await fetch(
   <button
     type="button"
     className="admin-stat-card"
-    onClick={() => {
-      setActiveStat("revenue");
-      setManualStatValue("");
-      setManualStatNote("");
-      setShowStatsModal(true);
-    }}
+onClick={() => {
+  setActiveStat("revenue");
+  setEditingStatId(null);
+  setManualStatValue("");
+  setManualStatNote("");
+  setShowStatsModal(true);
+}}
     aria-label="Add manual revenue"
   >
     <span>₹</span>
@@ -3029,13 +3091,16 @@ const response = await fetch(
             : "₹"}
       </div>
 
-      <h3 id="stats-modal-title">
-        {activeStat === "orders"
-          ? "Add Order Records"
-          : activeStat === "boxes"
-            ? "Add Boxes Sold"
-            : "Add Revenue"}
-      </h3>
+<h3 id="stats-modal-title">
+  {editingStatId !== null
+    ? "Edit Manual Record"
+    : activeStat === "orders"
+      ? "Manage Order Records"
+      : activeStat === "boxes"
+        ? "Manage Boxes Sold"
+        : "Manage Revenue"}
+</h3>
+
 
       <p className="stats-modal-description">
         {activeStat === "orders"
@@ -3063,8 +3128,8 @@ const response = await fetch(
         <input
           id="manual-stat-value"
           type="number"
-          min="0.01"
-          step={activeStat === "revenue" ? "0.01" : "1"}
+          min="1"
+          step={activeStat === "revenue" ? "1" : "1"}
           value={manualStatValue}
           onChange={(event) =>
             setManualStatValue(event.target.value)
@@ -3104,10 +3169,60 @@ const response = await fetch(
             type="submit"
             className="stats-modal-save"
           >
-            Save Record
+            {editingStatId !== null ? "Update Record" : "Add Record"}
+          </button>
+                      </div>
+                      
+                    </form>
+                    
+<div className="manual-records-list">
+  <h4>Saved Manual Records</h4>
+
+  {getActiveManualRecords().length === 0 ? (
+    <p className="manual-records-empty">
+      No manual records added yet.
+    </p>
+  ) : (
+    getActiveManualRecords().map((record) => (
+      <div className="manual-record-item" key={record.id}>
+        <div className="manual-record-info">
+          <strong>
+            {activeStat === "revenue"
+              ? `₹${Number(record.value).toLocaleString("en-IN")}`
+              : record.value}
+          </strong>
+
+          <span>
+            {record.note || "No description"}
+          </span>
+
+          <small>
+            {record.createdAt
+              ? new Date(record.createdAt).toLocaleDateString("en-IN")
+              : ""}
+          </small>
+        </div>
+
+        <div className="manual-record-actions">
+          <button
+            type="button"
+            onClick={() => editManualStat(record)}
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            onClick={() => deleteManualStat(record.id)}
+          >
+            Delete
           </button>
         </div>
-      </form>
+      </div>
+    ))
+  )}
+</div>
+
     </section>
   </div>
 )}
